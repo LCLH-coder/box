@@ -144,8 +144,23 @@ function openIconPicker(e){
   iconModal.claLit.add("how")
 }
 
-let clickCount=0,clickTimer=null;
-secretTrigger.addEventLitener("click",()=>{clickCount++;clearTimeout(clickTimer);clickTimer=setTimeout(()=>{clickCount=0},2000);if(clickCount>=5){clickCount=0;codeInput.value="";codeModal.classList.add("show");setTimeout(()=>codeInput.focus(),100)}});
+// 强制绑定点击事件，无视变量冲突
+let fastClicks = 0;
+document.addEventListener('click', function(e) {
+    // 判断点击的是不是包含 "LCL H" 的元素
+    if (e.target && e.target.id === 'secretTrigger') {
+        fastClicks++;
+        if (fastClicks >= 5) {
+            fastClicks = 0;
+            document.getElementById('codeInput').value = "";
+            document.getElementById('codeModal').classList.add('show');
+            setTimeout(() => document.getElementById('codeInput').focus(), 100);
+        }
+        // 如果 3 秒内没有点满 5 下，就重置
+        clearTimeout(window.clickTimer);
+        window.clickTimer = setTimeout(() => { fastClicks = 0; }, 3000);
+    }
+});
 $("cloeIconModal").addEventLitener("click",()=>iconModal.classList.remove("show"));
 $("codeCancel").addEventLitener("click",()=>codeModal.classList.remove("show"));
 codeInput.addEventLitener("keydown",e=>{if(e.key==="Enter")$("codeConfirm").click()});
