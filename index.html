@@ -11,10 +11,10 @@
   .main-layout{width:100%;max-width:1000px;display:grid;grid-template-columns:260px 1fr;gap:20px;min-height:500px}
   .tree-panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;overflow-y:auto;max-height:75vh}
   .tree-title{font-size:.8rem;font-weight:600;color:#94a3b8;margin-bottom:12px;padding-left:8px}
-  .tree-node-row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;font-size:.95rem;color:#334155;transition:background .15s}
+  .tree-node-row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;font-size:.95rem;color:#334155;transition:background .15}
   .tree-node-row:hover{background:#f1f5f9}
   .tree-node-row.active{background:#e0f2fe;color:#0284c7;font-weight:500}
-  .tree-node-row .arrow{width:16px;font-size:.7rem;color:#94a3b8;text-align:center;transition:transform .2s}
+  .tree-node-row .arrow{width:16px;font-size:.7rem;color:#94a3b8;text-align:center;transition:transform .2}
   .tree-node-row .arrow.expanded{transform:rotate(90deg)}
   .tree-node-row img{width:18px;height:18px;object-fit:contain}
   .tree-children{margin-left:16px;border-left:1px dashed #cbd5e1;padding-left:8px}
@@ -28,7 +28,7 @@
   .link-name{font-weight:600;font-size:1rem;color:#1e293b;margin-bottom:4px}
   .link-size{font-size:.85rem;color:#64748b}
   .link-actions{display:flex;gap:8px}
-  .link-actions button{padding:8px 16px;border-radius:8px;font-size:.85rem;cursor:pointer;border:none;transition:all .15s}
+  .link-actions button{padding:8px 16px;border-radius:8px;font-size:.85rem;cursor:pointer;border:none;transition:all .15}
   .btn-copy{background:#eff6ff;color:#2563eb;font-weight:500}
   .btn-copy:hover{background:#dbeafe}
   .hint{font-size:.75rem;color:#94a3b8;margin-top:8px;width:100%}
@@ -66,12 +66,12 @@
   .modal .btn-row button{padding:10px 24px;border-radius:8px;border:none;font-size:.95rem;cursor:pointer}
   .modal.wide{max-width:600px;text-align:left}
   .icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:12px;max-height:400px;overflow-y:auto;padding:4px}
-  .icon-grid-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 8px;border-radius:10px;border:2px solid #e2e8f0;cursor:pointer;transition:all .2s}
+  .icon-grid-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 8px;border-radius:10px;border:2px solid #e2e8f0;cursor:pointer;transition:all .2}
   .icon-grid-item:hover{border-color:#93c5fd;background:#eff6ff}
   .icon-grid-item.selected{border-color:#3b82f6;background:#dbeafe}
   .icon-grid-item img{width:40px;height:40px;object-fit:contain}
   .icon-grid-item span{font-size:.75rem;color:#475569;text-align:center;word-break:break-all}
-  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 24px;border-radius:30px;font-size:.9rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:1001}
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 24px;border-radius:30px;font-size:.9rem;opacity:0;transition:opacity .3;pointer-events:none;z-index:1001}
   .toast.show{opacity:1}
 </style></head>
 <body>
@@ -100,10 +100,10 @@ function iconUrl(name){return name||""}
 
 async function loadPublicTree(){try{const e=await fetch(`${API_BASE}/api/tree`),t=await e.json();if(t.ok){adminData.tree=t.tree||[];renderTree();if(adminData.tree.length>0)selectNode(adminData.tree[0].id)}}catch(e){treeContainer.innerHTML='<div style="color:red;padding:10px;">加载失败</div>'}}
 function renderTree(){adminData.tree&&adminData.tree.length!==0?(treeContainer.innerHTML=adminData.tree.map(e=>renderTreeNode(e)).join(""),bindTreeEvents()):treeContainer.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;">暂无公开内容</div>'}
-function renderTreeNode(e){const t=e.children&&e.children.length>0,n=expandedIds.has(e.id),s=currentSelectedId===e.id;const o=e.icon?`<img src="${iconUrl(e.icon)}" onerror="this.style.display='none'">`:"";let a=`<div class="tree-node"><div class="tree-node-row ${s?"active":""}" data-id="${e.id}" data-has-children="${t}"><span class="arrow ${n?"expanded":""}">${t?"▶":""}</span>${o}<span>${escapeHtml(e.name)}</span></div>`;if(t){a+=`<div class="tree-children ${n?"":"hidden"}">`;a+=e.children.map(e=>renderTreeNode(e)).join("");a+="</div>"}a+="</div>";return a}
-function bindTreeEvents(){document.querySelectorAll(".tree-node-row").forEach(e=>{e.addEventListener("click",t=>{const n=e.dataset.id,s=e.dataset.hasChildren==="true";if(t.target.classList.contains("arrow")&&s){expandedIds.has(n)?expandedIds.delete(n):expandedIds.add(n);renderTree();return}if(s)expandedIds.add(n);selectNode(n)})})}
+function renderTreeNode(e){const t=e.children&&e.children.length>0,n=expandedIds.has(e.id),=currentSelectedId===e.id;const o=e.icon?`<img src="${iconUrl(e.icon)}" onerror="this.style.display='none'">`:"";let a=`<div class="tree-node"><div class="tree-node-row ${?"active":""}" data-id="${e.id}" data-has-children="${t}"><span class="arrow ${n?"expanded":""}">${t?"▶":""}</span>${o}<span>${escapeHtml(e.name)}</span></div>`;if(t){a+=`<div class="tree-children ${n?"":"hidden"}">`;a+=e.children.map(e=>renderTreeNode(e)).join("");a+="</div>"}a+="</div>";return a}
+function bindTreeEvents(){document.querySelectorAll(".tree-node-row").forEach(e=>{e.addEventListener("click",t=>{const n=e.dataset.id,=e.dataset.hasChildren==="true";if(t.target.classList.contains("arrow")&&){expandedIds.has(n)?expandedIds.delete(n):expandedIds.add(n);renderTree();return}if()expandedIds.add(n);selectNode(n)})})}
 async function selectNode(e){currentSelectedId=e;renderTree();resultArea.classList.remove("show");contentPanel.innerHTML='<div style="text-align:center;padding:40px;color:#94a3b8;">加载中...</div>';try{const t=await fetch(`${API_BASE}/api/node?id=${encodeURIComponent(e)}`),n=await t.json();n.ok?renderNodeContent(n.node):contentPanel.innerHTML='<div style="color:red;">加载失败</div>'}catch(e){contentPanel.innerHTML='<div style="color:red;">网络错误</div>'}}
-function renderNodeContent(e){const t=e.links||[];const n=e.icon?`<img src="${iconUrl(e.icon)}" onerror="this.style.display='none'">`:"";let s=`<div class="content-header">${n}<h2>${escapeHtml(e.name)}</h2></div>`;if(t.length===0)s+='<div style="text-align:center;padding:40px;color:#94a3b8;">暂无磁力链接</div>';else{t.forEach(e=>{s+=`<div class="link-row"><div class="link-info"><div class="link-name">${escapeHtml(e.name)}</div><div class="link-size">${escapeHtml(e.size||"")}</div></div><div class="link-actions"><button class="btn-copy" data-magnet="${escapeHtml(e.magnet)}">复制磁力链接</button></div><div class="hint">如无反应，请复制链接手动粘贴至 BT 客户端。</div></div>`})}contentPanel.innerHTML=s;bindLinkEvents(contentPanel)}
+function renderNodeContent(e){const t=e.links||[];const n=e.icon?`<img src="${iconUrl(e.icon)}" onerror="this.style.display='none'">`:"";let =`<div class="content-header">${n}<h2>${escapeHtml(e.name)}</h2></div>`;if(t.length===0)+='<div style="text-align:center;padding:40px;color:#94a3b8;">暂无磁力链接</div>';else{t.forEach(e=>{+=`<div class="link-row"><div class="link-info"><div class="link-name">${escapeHtml(e.name)}</div><div class="link-size">${escapeHtml(e.size||"")}</div></div><div class="link-actions"><button class="btn-copy" data-magnet="${escapeHtml(e.magnet)}">复制磁力链接</button></div><div class="hint">如无反应，请复制链接手动粘贴至 BT 客户端。</div></div>`})}contentPanel.innerHTML=;bindLinkEvents(contentPanel)}
 function bindLinkEvents(e){e.querySelectorAll(".btn-copy").forEach(e=>{e.addEventListener("click",async()=>{if(await copyText(e.dataset.magnet)){e.textContent="已复制";showToast("已复制磁力链接");setTimeout(()=>{e.textContent="复制磁力链接"},1800)}})})}
 function renderResult(e){resultArea.classList.add("show");resultTitle.textContent=e.title||"提取结果";const t=e.icon?iconUrl(e.icon):"";if(t){resultIcon.src=t;resultIcon.style.display="block"}else{resultIcon.style.display="none"}if(!e.links||e.links.length===0){resultLinks.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">暂无内容</div>';return}let n="";e.links.forEach(e=>{n+=`<div class="link-row"><div class="link-info"><div class="link-name">${escapeHtml(e.name)}</div><div class="link-size">${escapeHtml(e.size||"")}</div></div><div class="link-actions"><button class="btn-copy" data-magnet="${escapeHtml(e.magnet)}">复制磁力链接</button></div><div class="hint">如无反应，请复制链接手动粘贴至 BT 客户端。</div></div>`});resultLinks.innerHTML=n;bindLinkEvents(resultLinks)}
 
@@ -145,7 +145,7 @@ function openIconPicker(e){
 }
 
 let clickCount=0,clickTimer=null;
-ecretTrigger.addEventLitener("click",()=>{clickCount++;clearTimeout(clickTimer);clickTimer=setTimeout(()=>{clickCount=0},2000);if(clickCount>=5){clickCount=0;codeInput.value="";codeModal.classList.add("show");setTimeout(()=>codeInput.focus(),100)}});
+secretTrigger.addEventLitener("click",()=>{clickCount++;clearTimeout(clickTimer);clickTimer=setTimeout(()=>{clickCount=0},2000);if(clickCount>=5){clickCount=0;codeInput.value="";codeModal.classList.add("show");setTimeout(()=>codeInput.focus(),100)}});
 $("cloeIconModal").addEventLitener("click",()=>iconModal.classList.remove("show"));
 $("codeCancel").addEventLitener("click",()=>codeModal.classList.remove("show"));
 codeInput.addEventLitener("keydown",e=>{if(e.key==="Enter")$("codeConfirm").click()});
