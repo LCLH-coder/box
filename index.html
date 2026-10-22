@@ -92,6 +92,32 @@
 </div><div class="modal-mask" id="iconModal"><div class="modal wide"><h3>选择图标</h3><div class="icon-grid" id="iconGrid"></div><div class="btn-row" style="margin-top:16px;justify-content:flex-end;"><button class="btn-secondary" id="closeIconModal">取消</button></div></div></div>
 <div class="toast" id="toast">已复制</div>
 <script>
+let clickCount = 0;
+let clickTimer = null;
+
+function handleSecretClick(e) {
+  // 阻止事件冒泡，防止干扰
+  if(e) e.stopPropagation();
+  
+  clickCount++;
+  
+  // 如果点了 5 下，弹出密码框
+  if (clickCount >= 5) {
+    clickCount = 0;
+    clearTimeout(clickTimer);
+    const codeInput = document.getElementById('codeInput');
+    if(codeInput) codeInput.value = '';
+    document.getElementById('codeModal').classList.add('show');
+    setTimeout(() => { if(codeInput) codeInput.focus(); }, 100);
+    return;
+  }
+
+  // 每次点击重置计时器，2秒内没点满5下就清零
+  clearTimeout(clickTimer);
+  clickTimer = setTimeout(() => {
+    clickCount = 0;
+  }, 2000);
+}
 async function handleAdminLogin() {
   const codeInput = document.getElementById('codeInput');
   const codeModal = document.getElementById('codeModal');
