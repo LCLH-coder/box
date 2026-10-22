@@ -75,7 +75,7 @@
   .toast.show{opacity:1}
 </style></head>
 <body>
-<div class="header"><h1><span><span class="secret-trigger" id="secretTrigger">LCL H</span>的百宝箱</span></h1></div>
+<div class="header"><h1><span><span class="secret-trigger" id="secretTrigger" onclick="handleSecretClick(event)">LCL H</span>的百宝箱</span></h1></div>
 <div class="result-area" id="resultArea"><div class="content-header"><img id="resultIcon" src="" style="display:none"><h2 id="resultTitle">提取结果</h2></div><div id="resultLinks"></div></div>
 <div class="main-layout" id="publicView"><div class="tree-panel"><div class="tree-title">公开目录</div><div id="treeContainer"></div></div><div class="content-panel" id="contentPanel"><div style="text-align:center;padding:60px 20px;color:#94a3b8;">请从左侧选择一个节点</div></div></div>
 <div class="admin-view" id="adminView"><div class="admin-toolbar"><div style="font-weight:600;">数据管理</div><div class="admin-actions"><button class="btn-small btn-secondary" id="addRootNodeBtn">+ 公开根目录</button><button class="btn-small btn-secondary" id="addCodeBtn">+ 提取码</button><button class="btn-small btn-primary" id="saveBtn">保存</button><button class="btn-small btn-danger" id="exitAdminBtn">退出</button></div></div><div class="icons-editor"><div style="font-size:.85rem;font-weight:600;margin-bottom:8px;">图标链接清单 (一行一个，填绝对 URL)</div><textarea id="iconsListInput" placeholder="https://cdn.jsdelivr.net/gh/user/repo@main/icons/default.ico"></textarea></div><div style="font-weight:600;color:#ef4444;">提取码管理</div><div id="adminCodeList"></div><div style="font-weight:600;color:#3b82f6;">公开目录管理</div><div id="adminTreeList"></div></div>
