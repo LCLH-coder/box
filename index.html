@@ -92,6 +92,77 @@
 </div><div class="modal-mask" id="iconModal"><div class="modal wide"><h3>选择图标</h3><div class="icon-grid" id="iconGrid"></div><div class="btn-row" style="margin-top:16px;justify-content:flex-end;"><button class="btn-secondary" id="closeIconModal">取消</button></div></div></div>
 <div class="toast" id="toast">已复制</div>
 <script>
+async function handleAdminLogin() {
+  const codeInput = document.getElementById('codeInput');
+  const codeModal = document.getElementById('codeModal');
+  const pwd = codeInput.value.trim();
+  
+  if (!pwd) { alert('请输入密码'); return; }
+
+  // 先关闭弹窗，给用户反馈
+  codeModal.classList.remove('show');
+  
+  try {
+    // 1. 尝试管理员登录
+    const res = await fetch(`${API_BASE}/api/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      // 登录成功
+      isAdmin = true;
+      adminPasswordCache = pwd;
+      document.body.classList.add('admin-mode');
+      await loadAdminData(); // 加载后台数据
+      alert('管理员登录成功！');
+      return;
+    }
+
+    // 2. 尝试验证提取码
+    const vRes = await fetch(`${API_BASE}/api/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: pwd })
+    });
+    const vData = await vRes.json();
+
+    if (vData.ok) {
+      // 提取码正确，显示结果
+      const resultArea = document.getElementById('resultArea');
+      const resultTitle = document.getElementById('resultTitle');
+      const resultLinks = document.getElementById('resultLinks');
+      
+      resultArea.classList.add('show');
+      resultTitle.textContent = vData.data.title || '提取结果';
+      
+      let html = '';
+      if (vData.data.links && vData.data.links.length > 0) {
+        vData.data.links.forEach(link => {
+          html += `<div class="link-row">
+            <div class="link-info">
+              <div class="link-name">${link.name}</div>
+              <div class="link-size">${link.size || ''}</div>
+            </div>
+            <div class="link-actions">
+              <button class="btn-copy" onclick="navigator.clipboard.writeText('${link.magnet}'); alert('已复制')">复制磁力链接</button>
+            </div>
+          </div>`;
+        });
+      } else {
+        html = '<div style="text-align:center;padding:20px;">暂无内容</div>';
+      }
+      resultLinks.innerHTML = html;
+    } else {
+      alert('提取码或密码错误！');
+    }
+  } catch (err) {
+    alert('网络请求失败，请检查 Cloudflare 后端地址！');
+    console.error(err);
+  }
+}
 // ⚠️ 注意：把下面的 https://box.huanglcl7.workers.dev 换成你自己的 Worker 网址！
 const API_BASE = 'https://box.huanglcl7.workers.dev';
 
