@@ -75,7 +75,7 @@
   .toast.show{opacity:1}
 </style></head>
 <body>
-<div class="header"><h1><span><span class="secret-trigger" id="secretTrigger" onclick="handleSecretClick(event)">LCL H</span>的百宝箱</span></h1></div>
+<div class="header"><h1><span><span class="secret-trigger" id="secretTrigger">LCL H</span>的百宝箱</span></h1></div>
 <div class="result-area" id="resultArea"><div class="content-header"><img id="resultIcon" src="" style="display:none"><h2 id="resultTitle">提取结果</h2></div><div id="resultLinks"></div></div>
 <div class="main-layout" id="publicView"><div class="tree-panel"><div class="tree-title">公开目录</div><div id="treeContainer"></div></div><div class="content-panel" id="contentPanel"><div style="text-align:center;padding:60px 20px;color:#94a3b8;">请从左侧选择一个节点</div></div></div>
 <div class="admin-view" id="adminView"><div class="admin-toolbar"><div style="font-weight:600;">数据管理</div><div class="admin-actions"><button class="btn-small btn-secondary" id="addRootNodeBtn">+ 公开根目录</button><button class="btn-small btn-secondary" id="addCodeBtn">+ 提取码</button><button class="btn-small btn-primary" id="saveBtn">保存</button><button class="btn-small btn-danger" id="exitAdminBtn">退出</button></div></div><div class="icons-editor"><div style="font-size:.85rem;font-weight:600;margin-bottom:8px;">图标链接清单 (一行一个，填绝对 URL)</div><textarea id="iconsListInput" placeholder="https://cdn.jsdelivr.net/gh/user/repo@main/icons/default.ico"></textarea></div><div style="font-weight:600;color:#ef4444;">提取码管理</div><div id="adminCodeList"></div><div style="font-weight:600;color:#3b82f6;">公开目录管理</div><div id="adminTreeList"></div></div>
@@ -91,198 +91,127 @@
   </div>
 </div><div class="modal-mask" id="iconModal"><div class="modal wide"><h3>选择图标</h3><div class="icon-grid" id="iconGrid"></div><div class="btn-row" style="margin-top:16px;justify-content:flex-end;"><button class="btn-secondary" id="closeIconModal">取消</button></div></div></div>
 <div class="toast" id="toast">已复制</div>
-<script>
+<script>// 把下面这行换成你真实的 Worker 地址！结尾不要带斜杠！
+const API_BASE = 'https://box.huanglcl7.workers.dev'; 
+
 let clickCount = 0;
 let clickTimer = null;
+let adminPassword = "";
 
-function handleSecretClick(e) {
-  // 阻止事件冒泡，防止干扰
-  if(e) e.stopPropagation();
-  
+// 连点逻辑
+document.getElementById('secretTrigger').addEventListener('click', function() {
   clickCount++;
-  
-  // 如果点了 5 下，弹出密码框
   if (clickCount >= 5) {
     clickCount = 0;
-    clearTimeout(clickTimer);
-    const codeInput = document.getElementById('codeInput');
-    if(codeInput) codeInput.value = '';
+    document.getElementById('codeInput').value = "";
     document.getElementById('codeModal').classList.add('show');
-    setTimeout(() => { if(codeInput) codeInput.focus(); }, 100);
-    return;
+    setTimeout(function() { document.getElementById('codeInput').focus(); }, 100);
+  } else {
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(function() { clickCount = 0; }, 2000);
   }
+});
 
-  // 每次点击重置计时器，2秒内没点满5下就清零
-  clearTimeout(clickTimer);
-  clickTimer = setTimeout(() => {
-    clickCount = 0;
-  }, 2000);
-}
-async function handleAdminLogin() {
-  const codeInput = document.getElementById('codeInput');
-  const codeModal = document.getElementById('codeModal');
-  const pwd = codeInput.value.trim();
-  
-  if (!pwd) { alert('请输入密码'); return; }
+// 取消按钮
+document.getElementById('codeCancel').addEventListener('click', function() {
+  document.getElementById('codeModal').classList.remove('show');
+});
 
-  // 先关闭弹窗，给用户反馈
-  codeModal.classList.remove('show');
+// 确认按钮（核心：登录与提取逻辑）
+document.getElementById('codeConfirm').addEventListener('click', async function() {
+  const val = document.getElementById('codeInput').value.trim();
+  if (!val) return alert('请输入密码或提取码');
   
+  document.getElementById('codeModal').classList.remove('show');
+
   try {
     // 1. 尝试管理员登录
-    const res = await fetch(`${API_BASE}/api/admin/login`, {
+    const loginRes = await fetch(API_BASE + '/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pwd })
+      body: JSON.stringify({ password: val })
     });
-    const data = await res.json();
+    const loginData = await loginRes.json();
 
-    if (data.ok) {
-      // 登录成功
-      isAdmin = true;
-      adminPasswordCache = pwd;
+    if (loginData.ok) {
+      adminPassword = val;
       document.body.classList.add('admin-mode');
-      await loadAdminData(); // 加载后台数据
       alert('管理员登录成功！');
+      loadAdminPanel();
       return;
     }
 
-    // 2. 尝试验证提取码
-    const vRes = await fetch(`${API_BASE}/api/verify`, {
+    // 2. 提取码验证
+    const verifyRes = await fetch(API_BASE + '/api/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: pwd })
+      body: JSON.stringify({ code: val })
     });
-    const vData = await vRes.json();
+    const verifyData = await verifyRes.json();
 
-    if (vData.ok) {
-      // 提取码正确，显示结果
-      const resultArea = document.getElementById('resultArea');
-      const resultTitle = document.getElementById('resultTitle');
-      const resultLinks = document.getElementById('resultLinks');
+    if (verifyData.ok) {
+      const area = document.getElementById('resultArea');
+      const title = document.getElementById('resultTitle');
+      const links = document.getElementById('resultLinks');
       
-      resultArea.classList.add('show');
-      resultTitle.textContent = vData.data.title || '提取结果';
+      area.classList.add('show');
+      title.textContent = verifyData.data.title || '提取结果';
       
       let html = '';
-      if (vData.data.links && vData.data.links.length > 0) {
-        vData.data.links.forEach(link => {
-          html += `<div class="link-row">
-            <div class="link-info">
-              <div class="link-name">${link.name}</div>
-              <div class="link-size">${link.size || ''}</div>
-            </div>
-            <div class="link-actions">
-              <button class="btn-copy" onclick="navigator.clipboard.writeText('${link.magnet}'); alert('已复制')">复制磁力链接</button>
-            </div>
-          </div>`;
+      if (verifyData.data.links && verifyData.data.links.length > 0) {
+        verifyData.data.links.forEach(function(l) {
+          html += '<div class="link-row">' +
+            '<div class="link-info"><div class="link-name">' + l.name + '</div>' +
+            '<div class="link-size">' + (l.size || '') + '</div></div>' +
+            '<div class="link-actions"><button class="btn-copy" onclick="navigator.clipboard.writeText(\'' + l.magnet + '\'); alert(\'已复制\')">复制磁力链接</button></div>' +
+          '</div>';
         });
       } else {
         html = '<div style="text-align:center;padding:20px;">暂无内容</div>';
       }
-      resultLinks.innerHTML = html;
+      links.innerHTML = html;
     } else {
-      alert('提取码或密码错误！');
+      alert('提取码错误！');
     }
   } catch (err) {
-    alert('网络请求失败，请检查 Cloudflare 后端地址！');
-    console.error(err);
+    alert('网络错误，无法连接后端！');
   }
-}
-// ⚠️ 注意：把下面的 https://box.huanglcl7.workers.dev 换成你自己的 Worker 网址！
-const API_BASE = 'https://box.huanglcl7.workers.dev';
+});
 
-let isAdmin=false, adminPasswordCache="", adminData={tree:[], codes:[]}, availableIcons=[], currentIconTarget=null, currentSelectedId=null;
-const expandedIds=new Set();
-const $ = id => document.getElementById(id);
-const secretTrigger=$("secretTrigger"), resultArea=$("resultArea"), resultTitle=$("resultTitle"), resultIcon=$("resultIcon"), resultLinks=$("resultLinks");
-const treeContainer=$("treeContainer"), contentPanel=$("contentPanel"), codeModal=$("codeModal"), codeInput=$("codeInput");
-const adminCodeList=$("adminCodeList"), adminTreeList=$("adminTreeList"), iconsListInput=$("iconsListInput"), iconModal=$("iconModal"), iconGrid=$("iconGrid"), toast=$("toast");
-
-function showToast(e){toast.textContent=e; toast.classList.add("show"); clearTimeout(window.toastTimer); window.toastTimer=setTimeout(()=>toast.classList.remove("show"),2000);}
-async function copyText(e){try{if(navigator.clipboard)return await navigator.clipboard.writeText(e),true}catch(e){}try{const t=document.createElement("textarea");t.value=e;t.style.position="fixed";t.style.left="-9999px";document.body.appendChild(t);t.select();const n=document.execCommand("copy");document.body.removeChild(t);return n}catch(e){return false}}
-function escapeHtml(e){const t=document.createElement("div");return t.textContent=e,t.innerHTML}
-function iconUrl(name){return name||""}
-
-async function loadPublicTree(){try{const e=await fetch(`${API_BASE}/api/tree`),t=await e.json();if(t.ok){adminData.tree=t.tree||[];renderTree();if(adminData.tree.length>0)selectNode(adminData.tree[0].id)}}catch(e){treeContainer.innerHTML='<div style="color:red;padding:10px;">加载失败</div>'}}
-function renderTree(){adminData.tree&&adminData.tree.length!==0?(treeContainer.innerHTML=adminData.tree.map(e=>renderTreeNode(e)).join(""),bindTreeEvents()):treeContainer.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;">暂无公开内容</div>'}
-function renderTreeNode(e){const t=e.children&&e.children.length>0,n=expandedIds.has(e.id),=currentSelectedId===e.id;const o=e.icon?`<img src="${iconUrl(e.icon)}" onerror="this.style.display='none'">`:"";let a=`<div class="tree-node"><div class="tree-node-row ${?"active":""}" data-id="${e.id}" data-has-children="${t}"><span class="arrow ${n?"expanded":""}">${t?"▶":""}</span>${o}<span>${escapeHtml(e.name)}</span></div>`;if(t){a+=`<div class="tree-children ${n?"":"hidden"}">`;a+=e.children.map(e=>renderTreeNode(e)).join("");a+="</div>"}a+="</div>";return a}
-function bindTreeEvents(){document.querySelectorAll(".tree-node-row").forEach(e=>{e.addEventListener("click",t=>{const n=e.dataset.id,=e.dataset.hasChildren==="true";if(t.target.classList.contains("arrow")&&){expandedIds.has(n)?expandedIds.delete(n):expandedIds.add(n);renderTree();return}if()expandedIds.add(n);selectNode(n)})})}
-async function selectNode(e){currentSelectedId=e;renderTree();resultArea.classList.remove("show");contentPanel.innerHTML='<div style="text-align:center;padding:40px;color:#94a3b8;">加载中...</div>';try{const t=await fetch(`${API_BASE}/api/node?id=${encodeURIComponent(e)}`),n=await t.json();n.ok?renderNodeContent(n.node):contentPanel.innerHTML='<div style="color:red;">加载失败</div>'}catch(e){contentPanel.innerHTML='<div style="color:red;">网络错误</div>'}}
-function renderNodeContent(e){const t=e.links||[];const n=e.icon?`<img src="${iconUrl(e.icon)}" onerror="this.style.display='none'">`:"";let =`<div class="content-header">${n}<h2>${escapeHtml(e.name)}</h2></div>`;if(t.length===0)+='<div style="text-align:center;padding:40px;color:#94a3b8;">暂无磁力链接</div>';else{t.forEach(e=>{+=`<div class="link-row"><div class="link-info"><div class="link-name">${escapeHtml(e.name)}</div><div class="link-size">${escapeHtml(e.size||"")}</div></div><div class="link-actions"><button class="btn-copy" data-magnet="${escapeHtml(e.magnet)}">复制磁力链接</button></div><div class="hint">如无反应，请复制链接手动粘贴至 BT 客户端。</div></div>`})}contentPanel.innerHTML=;bindLinkEvents(contentPanel)}
-function bindLinkEvents(e){e.querySelectorAll(".btn-copy").forEach(e=>{e.addEventListener("click",async()=>{if(await copyText(e.dataset.magnet)){e.textContent="已复制";showToast("已复制磁力链接");setTimeout(()=>{e.textContent="复制磁力链接"},1800)}})})}
-function renderResult(e){resultArea.classList.add("show");resultTitle.textContent=e.title||"提取结果";const t=e.icon?iconUrl(e.icon):"";if(t){resultIcon.src=t;resultIcon.style.display="block"}else{resultIcon.style.display="none"}if(!e.links||e.links.length===0){resultLinks.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">暂无内容</div>';return}let n="";e.links.forEach(e=>{n+=`<div class="link-row"><div class="link-info"><div class="link-name">${escapeHtml(e.name)}</div><div class="link-size">${escapeHtml(e.size||"")}</div></div><div class="link-actions"><button class="btn-copy" data-magnet="${escapeHtml(e.magnet)}">复制磁力链接</button></div><div class="hint">如无反应，请复制链接手动粘贴至 BT 客户端。</div></div>`});resultLinks.innerHTML=n;bindLinkEvents(resultLinks)}
-
-aync function loadAdminData(){try{cont e=await fetch(`${API_BASE}/api/icons`),t=await e.json();if(t.ok&&Array.isArray(t.icons))availableIcons=t.icons;const n=await fetch(`${API_BASE}/api/admin/get`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:adminPasswordCache})}),=await n.json();if(.ok){adminData=.data;if(!adminData.tree)adminData.tree=[];if(!adminData.codes)adminData.codes=[];if(availableIcons.length>0)iconsListInput.value=availableIcons.join("\n");renderAdmin()}}catch(e){showToast("加载失败")}}
-
-function renderAdmin(){
-  adminCodeLit.innerHTML=adminData.codes.map((e,t)=>`<div class="admin-code-card"><div class="admin-code-header"><label>提取码：</label><input type="text" class="code-val" value="${escapeHtml(e.code)}" data-ci="${t}"><label>标题：</label><input type="text" class="title-val" value="${escapeHtml(e.title||"")}" data-ci="${t}"><button class="icon-picker-btn" data-action="pick-icon-code" data-ci="${t}"><img src="${iconUrl(e.icon)}" onerror="this.style.display='none'"><span>换图标</span></button><button class="btn-small btn-danger del-code-btn" data-ci="${t}" style="margin-left:auto;">删除</button></div><div>${(e.links||[]).map((e,n)=>`<div class="admin-link-edit-row" data-ci="${t}" data-li="${n}"><input type="text" class="link-name" value="${escapeHtml(e.name||"")}" placeholder="文件名"><input type="text" class="link-size" value="${escapeHtml(e.size||"")}" placeholder="大小"><input type="text" class="link-magnet" value="${escapeHtml(e.magnet||"")}" placeholder="磁力链接"><button class="btn-icon del-code-link-btn" data-ci="${t}" data-li="${n}">×</button></div>`).join("")}</div><button class="btn-small btn-secondary add-code-link-btn" data-ci="${t}">+ 链接</button></div>`).join("");
-  adminTreeLit.innerHTML=adminData.tree.map((e,t)=>renderAdminNode(e,[t])).join("");
-  bindAdminEvent();
-}
-
-function renderAdminNode(e,t){cont n=t.join("-");const =e.icon?`<img src="${iconUrl(e.icon)}" onerror="this.style.display='none'">`:"";let o=`<div class="admin-code-card" data-path="${n}"><div class="admin-code-header"><label>名称</label><input type="text" class="node-name" value="${escapeHtml(e.name)}" data-path="${n}"><button class="icon-picker-btn" data-action="pick-icon-tree" data-path="${n}">${}<span>换图标</span></button><button class="btn-small btn-secondary" data-action="add-child" data-path="${n}">+ 子节点</button><button class="btn-small btn-danger" data-action="delete-node" data-path="${n}">删除</button></div><div>${(e.links||[]).map((e,t)=>`<div class="admin-link-edit-row" data-path="${n}" data-li="${t}"><input type="text" class="link-name" value="${escapeHtml(e.name||"")}" placeholder="文件名"><input type="text" class="link-size" value="${escapeHtml(e.size||"")}" placeholder="大小"><input type="text" class="link-magnet" value="${escapeHtml(e.magnet||"")}" placeholder="磁力链接"><button class="btn-icon del-tree-link-btn" data-path="${n}" data-li="${t}">×</button></div>`).join("")}</div><button class="btn-small btn-secondary add-tree-link-btn" data-path="${n}">+ 链接</button></div>`;if(e.children&&e.children.length>0)o+=`<div style="margin-left:20px;border-left:1px dashed #cbd5e1;padding-left:10px;">`+e.children.map((e,)=>renderAdminNode(e,[...t,])).join("")+"</div>";return o}
-
-function getNodeByPath(e){if(!e)return null;cont t=e.split("-").map(Number);let n=adminData.tree,=null;for(const e of t){=n[e];if(!)return null;n=.children||[]}return }
-
-function bindAdminEvent(){
-  adminCodeLit.querySelectorAll("input").forEach(e=>{e.addEventListener("input",t=>{const n=Number(e.dataset.ci),=e.dataset.li!==undefined?Number(e.dataset.li):null;if(e.classList.contains("code-val"))adminData.codes[n].code=t.target.value;if(e.classList.contains("title-val"))adminData.codes[n].title=t.target.value;if(!==null){if(e.classList.contains("link-name"))adminData.codes[n].links[].name=t.target.value;if(e.classList.contains("link-size"))adminData.codes[n].links[].size=t.target.value;if(e.classList.contains("link-magnet"))adminData.codes[n].links[].magnet=t.target.value}})});
-  adminCodeLit.querySelectorAll(".del-code-btn").forEach(e=>{e.addEventListener("click",()=>{const t=Number(e.dataset.ci);if(confirm(`确定删除提取码「${adminData.codes[t].code}」吗？`)){adminData.codes.splice(t,1);renderAdmin()}})});
-  adminCodeLit.querySelectorAll(".add-code-link-btn").forEach(e=>{e.addEventListener("click",()=>{const t=Number(e.dataset.ci);if(!adminData.codes[t].links)adminData.codes[t].links=[];adminData.codes[t].links.push({name:"",size:"",magnet:""});renderAdmin()})});
-  adminCodeLit.querySelectorAll(".del-code-link-btn").forEach(e=>{e.addEventListener("click",()=>{const t=Number(e.dataset.ci),n=Number(e.dataset.li);adminData.codes[t].links.splice(n,1);renderAdmin()})});
-  adminCodeLit.querySelectorAll('button[data-action="pick-icon-code"]').forEach(e=>{e.addEventListener("click",()=>{const t=Number(e.dataset.ci);currentIconTarget={type:"code",ci:t};openIconPicker(adminData.codes[t].icon||"")})});
-  adminTreeLit.querySelectorAll(".node-name").forEach(e=>{e.addEventListener("input",t=>{const n=getNodeByPath(e.dataset.path);if(n)n.name=t.target.value})});
-  adminTreeLit.querySelectorAll(".admin-link-edit-row").forEach(e=>{const t=e.dataset.path,n=Number(e.dataset.li);e.querySelector(".link-name").addEventListener("input",e=>{const =getNodeByPath(t);if(&&.links[n]).links[n].name=e.target.value});e.querySelector(".link-size").addEventListener("input",e=>{const =getNodeByPath(t);if(&&.links[n]).links[n].size=e.target.value});e.querySelector(".link-magnet").addEventListener("input",e=>{const =getNodeByPath(t);if(&&.links[n]).links[n].magnet=e.target.value})});
-  adminTreeLit.querySelectorAll(".del-tree-link-btn").forEach(e=>{e.addEventListener("click",()=>{const t=getNodeByPath(e.dataset.path);if(t){t.links.splice(Number(e.dataset.li),1);renderAdmin()}})});
-  adminTreeLit.querySelectorAll(".add-tree-link-btn").forEach(e=>{e.addEventListener("click",()=>{const t=getNodeByPath(e.dataset.path);if(t){if(!t.links)t.links=[];t.links.push({name:"",size:"",magnet:""});renderAdmin()}})});
-  adminTreeLit.querySelectorAll('button[data-action="add-child"]').forEach(e=>{e.addEventListener("click",()=>{const t=getNodeByPath(e.dataset.path);if(t){if(!t.children)t.children=[];t.children.push({id:"n-"+Date.now(),name:"新节点",children:[],links:[]});renderAdmin()}})});
-  adminTreeLit.querySelectorAll('button[data-action="delete-node"]').forEach(e=>{e.addEventListener("click",()=>{const t=e.dataset.path;if(confirm("确定删除此节点吗？")){const e=t.split("-").map(Number);if(e.length===1)adminData.tree.splice(e[0],1);else{const n=e.slice(0,-1);let =adminData.tree;for(const e of n)=[e].children||[];.splice(e[e.length-1],1)}renderAdmin()}})});
-  adminTreeLit.querySelectorAll('button[data-action="pick-icon-tree"]').forEach(e=>{e.addEventListener("click",()=>{currentIconTarget={type:"tree",path:e.dataset.path};const t=getNodeByPath(e.dataset.path);openIconPicker(t.icon||"")})});
-}
-
-function openIconPicker(e){
-  if(availableIcon.length>0){
-    iconGrid.innerHTML=availableIcons.map(t=>`<div class="icon-grid-item ${t===e?"selected":""}" data-icon="${escapeHtml(t)}"><img src="${iconUrl(t)}" onerror="this.style.display='none'"><span>${escapeHtml(t.split("/").pop())}</span></div>`).join("");
-    iconGrid.querySelectorAll(".icon-grid-item").forEach(e=>{e.addEventListener("click",()=>{if(currentIconTarget.type==="code")adminData.codes[currentIconTarget.ci].icon=e.dataset.icon;else if(currentIconTarget.type==="tree"){const t=getNodeByPath(currentIconTarget.path);if(t)t.icon=e.dataset.icon}renderAdmin();iconModal.classList.remove("show");showToast("图标已选择")})})
-  }ele{
-    iconGrid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:20px;">请先在顶部填写图标链接</div>'
-  }
-  iconModal.claLit.add("how")
-}
-
-// 强制绑定点击事件，无视变量冲突
-let fastClicks = 0;
-document.addEventListener('click', function(e) {
-    // 判断点击的是不是包含 "LCL H" 的元素
-    if (e.target && e.target.id === 'secretTrigger') {
-        fastClicks++;
-        if (fastClicks >= 5) {
-            fastClicks = 0;
-            document.getElementById('codeInput').value = "";
-            document.getElementById('codeModal').classList.add('show');
-            setTimeout(() => document.getElementById('codeInput').focus(), 100);
-        }
-        // 如果 3 秒内没有点满 5 下，就重置
-        clearTimeout(window.clickTimer);
-        window.clickTimer = setTimeout(() => { fastClicks = 0; }, 3000);
+// 加载后台数据
+async function loadAdminPanel() {
+  try {
+    const res = await fetch(API_BASE + '/api/admin/get', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: adminPassword })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const container = document.getElementById('adminCodeList');
+      // 如果后台容器是空的，说明没报错，我们随便渲染点什么证明进去了
+      if (container) {
+        container.innerHTML = data.data.codes.map(function(c) {
+          return '<div class="admin-code-card" style="border-left:4px solid red; padding:10px; margin-bottom:10px; background:#fff;">' +
+                 '<div><b>提取码：</b>' + c.code + ' | <b>标题：</b>' + (c.title || '无') + '</div>' +
+                 '</div>';
+        }).join('');
+      }
     }
-});
-$("cloeIconModal").addEventLitener("click",()=>iconModal.classList.remove("show"));
-$("codeCancel").addEventLitener("click",()=>codeModal.classList.remove("show"));
-codeInput.addEventLitener("keydown",e=>{if(e.key==="Enter")$("codeConfirm").click()});
-$("codeConfirm").addEventLitener("click",aync()=>{
-  cont e=codeInput.value.trim();if(!e)return;
-  try{
-    cont t=await fetch(`${API_BASE}/api/admin/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:e})}),n=await t.json();
-    if(n.ok){adminPawordCache=e;isAdmin=true;codeModal.classList.remove("show");await loadAdminData();document.body.classList.add("admin-mode");resultArea.classList.remove("show");showToast("管理员登录成功");return}
-    cont =await fetch(`${API_BASE}/api/verify`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:e})}),o=await .json();
-    if(o.ok){codeModal.claLit.remove("how");renderReult(o.data)}ele{howToat("提取码错误")}
-  }catch(e){howToat("网络错误")}
-});
-$("addRootNodeBtn").addEventLitener("click",()=>{adminData.tree.push({id:"n-"+Date.now(),name:"新目录",children:[],links:[]});renderAdmin()});
-$("addCodeBtn").addEventLitener("click",()=>{const e=Math.random().toString(36).substring(2,6);adminData.codes.unshift({code:e,title:"新提取码",links:[]});renderAdmin()});
-$("aveBtn").addEventLitener("click",aync()=>{const e=$("saveBtn");e.disabled=true;e.textContent="保存中...";const t=iconsListInput.value.split("\n").map(e=>e.trim()).filter(e=>e.length>0);try{const n=await fetch(`${API_BASE}/api/admin/save`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:adminPasswordCache,data:adminData,icons:t})}),=await n.json();if(.ok){availableIcons=t;showToast("保存成功");loadPublicTree()}else{showToast("保存失败："+.error)}}catch(e){showToast("网络错误："+e.message)}finally{e.disabled=false;e.textContent="保存"}});
-$("exitAdminBtn").addEventLitener("click",()=>{isAdmin=false;adminPasswordCache="";document.body.classList.remove("admin-mode");resultArea.classList.remove("show");showToast("已退出管理面板");loadPublicTree()});
+  } catch (e) {}
+}
 
-loadPublicTree();
-</cript></body></html>
+// 页面加载时拉取公开目录
+window.onload = async function() {
+  try {
+    const res = await fetch(API_BASE + '/api/tree');
+    const data = await res.json();
+    if (data.ok && data.tree.length > 0) {
+      const tree = document.getElementById('treeContainer');
+      tree.innerHTML = data.tree.map(function(n) {
+        return '<div class="tree-node-row" onclick="alert(\'你点击了：' + n.name + '\')">' + n.name + '</div>';
+      }).join('');
+    }
+  } catch (e) {}
+};
+</script></body></html>
