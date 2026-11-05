@@ -107,6 +107,11 @@
 
   <div class="admin-view" id="adminView">
     <div class="toolbar">
+          <!-- 加在这里：图标清单卡片 -->
+      <div class="card" style="margin-bottom: 20px;">
+        <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 8px;">图标链接清单 (一行一个绝对 URL)</div>
+        <textarea id="iconsListInput" style="width: 100%; min-height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: monospace; font-size: 0.85rem; outline: none;" placeholder="https://cdn.jsdelivr.net/gh/user/repo@main/icons/default.ico"></textarea>
+      </div>
       <div style="font-weight: 600; color: #ef4444;">管理员控制台</div>
       <div style="display: flex; gap: 10px;">
         <button class="btn-gray" onclick="addRootNode()">+ 公开根目录</button>
@@ -287,7 +292,13 @@
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwdCache })
         });
         let json = await res.json();
-        if (json.ok) { data = json.data; renderAdmin(); }
+        if (json.ok) { 
+          data = json.data; 
+          if (data.icons && data.icons.length > 0) {
+            document.getElementById('iconsListInput').value = data.icons.join('\n');
+          }
+          renderAdmin(); 
+        }
       } catch (e) { alert("加载失败"); }
     }
 
@@ -319,8 +330,9 @@
     }
     async function saveData() {
       try {
+        const iconList = document.getElementById('iconsListInput').value.split('\n').map( => .trim()).filter( => .length > 0);
         let res = await fetch(API_BASE + '/api/admin/save', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwdCache, data: data })
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwdCache, data: data, icons: iconList })
         });
         let json = await res.json();
         if (json.ok) { alert("保存成功！"); loadTree(); } else { alert("保存失败"); }
