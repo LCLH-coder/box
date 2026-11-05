@@ -1,485 +1,467 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>LCL H的百宝箱</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:30px 20px}
-  .header{width:100%;max-width:1000px;margin-bottom:24px;display:flex;align-items:center}
-  .header h1{font-size:2rem;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:12px;user-select:none}
-  .secret-trigger{cursor:pointer}
-  .main-layout{width:100%;max-width:1000px;display:grid;grid-template-columns:260px 1fr;gap:20px;min-height:500px}
-  .tree-panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;overflow-y:auto;max-height:75vh}
-  .tree-title{font-size:.8rem;font-weight:600;color:#94a3b8;margin-bottom:12px;padding-left:8px}
-  .tree-node-row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;font-size:.95rem;color:#334155;transition:background .15s}
-  .tree-node-row:hover{background:#f1f5f9}
-  .tree-node-row.active{background:#e0f2fe;color:#0284c7;font-weight:500}
-  .tree-node-row .arrow{width:16px;font-size:.7rem;color:#94a3b8;text-align:center;transition:transform .2s}
-  .tree-node-row .arrow.expanded{transform:rotate(90deg)}
-  .tree-node-row img{width:18px;height:18px;object-fit:contain}
-  .tree-children{margin-left:16px;border-left:1px dashed #cbd5e1;padding-left:8px}
-  .tree-children.hidden{display:none}
-  .content-panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;overflow-y:auto;max-height:75vh}
-  .content-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #f1f5f9}
-  .content-header img{width:32px;height:32px;object-fit:contain}
-  .content-header h2{font-size:1.3rem;color:#0f172a}
-  .link-row{display:flex;align-items:center;justify-content:space-between;padding:16px;border-radius:12px;background:#f8fafc;margin-bottom:10px;border:1px solid #e2e8f0;gap:12px;flex-wrap:wrap}
-  .link-info{flex:1;min-width:200px}
-  .link-name{font-weight:600;font-size:1rem;color:#1e293b;margin-bottom:4px}
-  .link-size{font-size:.85rem;color:#64748b}
-  .link-actions{display:flex;gap:8px}
-  .link-actions button{padding:8px 16px;border-radius:8px;font-size:.85rem;cursor:pointer;border:none;transition:all .15s}
-  .btn-copy{background:#eff6ff;color:#2563eb;font-weight:500}
-  .btn-copy:hover{background:#dbeafe}
-  .hint{font-size:.75rem;color:#94a3b8;margin-top:8px;width:100%}
-  .result-area{display:none;width:100%;max-width:1000px;background:#fff;border-radius:16px;padding:24px;border:1px solid #e2e8f0;margin-bottom:24px}
-  .result-area.show{display:block}
-  .admin-view{display:none;width:100%;max-width:1000px;flex-direction:column;gap:20px}
-  body.admin-mode .main-layout{display:none}
-  body.admin-mode .result-area{display:none!important}
-  body.admin-mode .admin-view{display:flex}
-  body.admin-mode .header h1::after{content:' (管理面板)';font-size:1.1rem;color:#ef4444}
-  .admin-toolbar{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:16px 20px;border-radius:12px;border:1px solid #e2e8f0}
-  .admin-actions{display:flex;gap:10px}
-  .admin-code-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px}
-  .admin-code-header{display:flex;gap:12px;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px dashed #e2e8f0;flex-wrap:wrap}
-  .admin-code-header input[type=text]{padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:1rem;outline:none}
-  .admin-code-header .code-input{font-weight:600;color:#ef4444;width:120px}
-  .admin-code-header .title-input{flex:1;font-weight:500;color:#0f172a;min-width:150px}
-  .icon-picker-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;cursor:pointer;font-size:.85rem}
-  .icon-picker-btn img{width:20px;height:20px;object-fit:contain}
-  .admin-link-edit-row{display:grid;grid-template-columns:1fr 80px 2fr 36px;gap:8px;margin-bottom:8px}
-  .admin-link-edit-row input{padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:.85rem;outline:none}
-  .btn-small{padding:6px 12px;border-radius:6px;font-size:.85rem;cursor:pointer;border:1px solid transparent}
-  .btn-primary{background:#3b82f6;color:#fff}
-  .btn-secondary{background:#f1f5f9;color:#334155;border-color:#cbd5e1}
-  .btn-danger{background:#fee2e2;color:#dc2626;border-color:#fecaca}
-  .btn-icon{background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;font-size:1.1rem}
-  .icons-editor{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px}
-  .icons-editor textarea{width:100%;min-height:80px;padding:10px;border-radius:8px;border:1px solid #cbd5e1;font-family:monospace;font-size:.85rem;outline:none;resize:vertical}
-  .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(4px);display:none;justify-content:center;align-items:center;z-index:1000}
-  .modal-mask.show{display:flex}
-  .modal{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:400px;text-align:center}
-  .modal h3{margin-bottom:20px;font-size:1.1rem}
-  .modal input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:1rem;margin-bottom:16px;outline:none}
-  .modal .btn-row{display:flex;justify-content:center;gap:10px}
-  .modal .btn-row button{padding:10px 24px;border-radius:8px;border:none;font-size:.95rem;cursor:pointer}
-  .modal.wide{max-width:600px;text-align:left}
-  .icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:12px;max-height:400px;overflow-y:auto;padding:4px}
-  .icon-grid-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 8px;border-radius:10px;border:2px solid #e2e8f0;cursor:pointer;transition:all .2s}
-  .icon-grid-item:hover{border-color:#93c5fd;background:#eff6ff}
-  .icon-grid-item.selected{border-color:#3b82f6;background:#dbeafe}
-  .icon-grid-item img{width:40px;height:40px;object-fit:contain}
-  .icon-grid-item span{font-size:.75rem;color:#475569;text-align:center;word-break:break-all}
-  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 24px;border-radius:30px;font-size:.9rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:1001}
-  .toast.show{opacity:1}
-</style></head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LCL H的百宝箱</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 30px 20px; }
+    .header h1 { font-size: 2rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 12px; user-select: none; }
+    .secret-trigger { cursor: pointer; }
+    .main-layout { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 260px 1fr; gap: 20px; margin-top: 24px; }
+    .tree-panel, .content-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; min-height: 500px; max-height: 75vh; overflow-y: auto; }
+    .tree-node-row { display: flex; align-items: center; gap: 8px; padding: 8px; cursor: pointer; border-radius: 8px; font-size: 0.95rem; }
+    .tree-node-row:hover { background: #f1f5f9; }
+    .tree-node-row.active { background: #e0f2fe; color: #0284c7; }
+    .tree-node-row img { width: 18px; height: 18px; object-fit: contain; }
+    .tree-children { margin-left: 16px; border-left: 1px dashed #cbd5e1; padding-left: 8px; }
+    .tree-children.hidden { display: none; }
+    .link-row { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-radius: 12px; background: #f8fafc; margin-bottom: 10px; border: 1px solid #e2e8f0; gap: 12px; flex-wrap: wrap; }
+    .btn-copy { background: #eff6ff; color: #2563eb; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; }
+    .result-area { display: none; width: 100%; max-width: 1000px; background: #fff; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-top: 24px; }
+    .result-area.show { display: block; }
+    .admin-view { display: none; width: 100%; max-width: 1000px; flex-direction: column; gap: 20px; margin-top: 24px; }
+    body.admin-mode .main-layout { display: none; }
+    body.admin-mode .result-area { display: none !important; }
+    body.admin-mode .admin-view { display: flex; }
+    .admin-toolbar { display: flex; justify-content: space-between; background: #fff; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .admin-code-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 16px; }
+    .admin-code-header { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed #e2e8f0; flex-wrap: wrap; }
+    .admin-code-header input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    .admin-link-edit-row { display: grid; grid-template-columns: 1fr 80px 2fr 36px; gap: 8px; margin-bottom: 8px; }
+    .admin-link-edit-row input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    .btn-small { padding: 6px 12px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-secondary { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+    .btn-danger { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+    .btn-icon { background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; cursor: pointer; }
+    .icons-editor { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px; }
+    .icons-editor textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: monospace; }
+    .modal-mask { position: fixed; inset: 0; background: rgba(15,23,42,0.4); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-mask.show { display: flex; }
+    .modal { background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; text-align: center; }
+    .modal input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #0f172a; color: white; padding: 12px 24px; border-radius: 30px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1001; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
 <body>
-<div class="header"><h1><span><span class="secret-trigger" id="secretTrigger">LCL H</span>的百宝箱</span></h1></div>
-<div class="result-area" id="resultArea"><div class="content-header"><img id="resultIcon" src="" style="display:none"><h2 id="resultTitle">提取结果</h2></div><div id="resultLinks"></div></div>
-<div class="main-layout" id="publicView"><div class="tree-panel"><div class="tree-title">公开目录</div><div id="treeContainer"></div></div><div class="content-panel" id="contentPanel"><div style="text-align:center;padding:60px 20px;color:#94a3b8;">请从左侧选择一个节点</div></div></div>
-<div class="admin-view" id="adminView"><div class="admin-toolbar"><div style="font-weight:600;">数据管理</div><div class="admin-actions"><button class="btn-small btn-secondary" id="addRootNodeBtn">+ 公开根目录</button><button class="btn-small btn-secondary" id="addCodeBtn">+ 提取码</button><button class="btn-small btn-primary" id="saveBtn">保存</button><button class="btn-small btn-danger" id="exitAdminBtn">退出</button></div></div><div class="icons-editor"><div style="font-size:.85rem;font-weight:600;margin-bottom:8px;">图标链接清单 (一行一个，填绝对 URL)</div><textarea id="iconsListInput" placeholder="https://cdn.jsdelivr.net/gh/user/repo@main/icons/default.ico"></textarea></div><div style="font-weight:600;color:#ef4444;">提取码管理</div><div id="adminCodeList"></div><div style="font-weight:600;color:#3b82f6;">公开目录管理</div><div id="adminTreeList"></div></div>
-<div class="modal-mask" id="codeModal"><div class="modal"><h3>请输入提取码</h3><input type="password" id="codeInput" placeholder="请输入提取码"><div class="btn-row"><button class="btn-secondary" id="codeCancel">取消</button><button class="btn-primary" id="codeConfirm">确认</button></div></div></div>
-<div class="modal-mask" id="iconModal"><div class="modal wide"><h3>选择图标</h3><div class="icon-grid" id="iconGrid"></div><div class="btn-row" style="margin-top:16px;justify-content:flex-end;"><button class="btn-secondary" id="closeIconModal">取消</button></div></div></div>
-<div class="toast" id="toast">已复制</div>
-<script>
-// ⚠️ 把下面的网址换成你自己的 Cloudflare Worker 地址，结尾不要带斜杠！
-const API_BASE = 'https://box.huanglcl7.workers.dev';
+  <div class="header">
+    <h1><span><span class="secret-trigger" id="secretTrigger">LCL H</span>的百宝箱</span></h1>
+  </div>
 
-let isAdmin = false;
-let adminPasswordCache = "";
-let adminData = { tree: [], codes: [] };
-let availableIcons = [];
-let currentIconTarget = null;
-let currentSelectedId = null;
-const expandedIds = new Set();
+  <div class="result-area" id="resultArea">
+    <h2 id="resultTitle" style="margin-bottom: 16px;">提取结果</h2>
+    <div id="resultLinks"></div>
+  </div>
 
-const $ = id => document.getElementById(id);
-const secretTrigger = $("secretTrigger"), resultArea = $("resultArea"), resultTitle = $("resultTitle"), resultIcon = $("resultIcon"), resultLinks = $("resultLinks");
-const treeContainer = $("treeContainer"), contentPanel = $("contentPanel"), codeModal = $("codeModal"), codeInput = $("codeInput");
-const adminCodeList = $("adminCodeList"), adminTreeList = $("adminTreeList"), iconsListInput = $("iconsListInput"), iconModal = $("iconModal"), iconGrid = $("iconGrid"), toast = $("toast");
-
-function showToast(e) {
-  toast.textContent = e;
-  toast.classList.add("show");
-  clearTimeout(window.toastTimer);
-  window.toastTimer = setTimeout(() => toast.classList.remove("show"), 2000);
-}
-
-function escapeHtml(e) {
-  const t = document.createElement("div");
-  t.textContent = e;
-  return t.innerHTML;
-}
-
-// ===== 连点 5 下弹窗逻辑 =====
-let clickCount = 0, clickTimer = null;
-secretTrigger.addEventListener('click', () => {
-  clickCount++;
-  clearTimeout(clickTimer);
-  clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
-  if (clickCount >= 5) {
-    clickCount = 0;
-    codeInput.value = "";
-    codeModal.classList.add('show');
-    setTimeout(() => codeInput.focus(), 100);
-  }
-});
-$("codeCancel").addEventListener('click', () => codeModal.classList.remove('show'));
-
-// ===== 核心验证逻辑 =====
-$("codeConfirm").addEventListener('click', async () => {
-  const val = codeInput.value.trim();
-  if (!val) return alert('请输入提取码');
-  codeModal.classList.remove('show');
-
-  try {
-    // 1. 验证管理员登录
-    const loginRes = await fetch(API_BASE + '/api/admin/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: val })
-    });
-    const loginData = await loginRes.json();
-    if (loginData.ok) {
-      adminPasswordCache = val;
-      isAdmin = true;
-      document.body.classList.add("admin-mode");
-      await loadAdminData();
-      showToast("管理员登录成功");
-      return;
-    }
-
-    // 2. 验证提取码
-    const verifyRes = await fetch(API_BASE + '/api/verify', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: val })
-    });
-    const verifyData = await verifyRes.json();
-    if (verifyData.ok) {
-      renderResult(verifyData.data);
-    } else {
-      alert("提取码错误");
-    }
-  } catch (err) {
-    alert("网络错误，无法连接后端");
-  }
-});
-
-// ===== 渲染公开文件 =====
-function renderResult(data) {
-  resultArea.classList.add("show");
-  resultTitle.textContent = data.title || "提取结果";
-  if (data.icon) { resultIcon.src = data.icon; resultIcon.style.display = "block"; } 
-  else { resultIcon.style.display = "none"; }
-  
-  if (!data.links || data.links.length === 0) {
-    resultLinks.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;">暂无内容</div>';
-    return;
-  }
-  let html = "";
-  data.links.forEach(l => {
-    html += `<div class="link-row"><div class="link-info"><div class="link-name">${escapeHtml(l.name)}</div><div class="link-size">${escapeHtml(l.size||"")}</div></div><div class="link-actions"><button class="btn-copy" onclick="navigator.clipboard.writeText('${l.magnet}'); alert('已复制')">复制磁力链接</button></div></div>`;
-  });
-  resultLinks.innerHTML = html;
-}
-
-// ===== 加载主页目录树 =====
-async function loadPublicTree() {
-  try {
-    const res = await fetch(API_BASE + '/api/tree');
-    const data = await res.json();
-    if (data.ok) {
-      adminData.tree = data.tree || [];
-      renderTree();
-      if (adminData.tree.length > 0 && !currentSelectedId) selectNode(adminData.tree[0].id);
-    }
-  } catch (e) { treeContainer.innerHTML = '<div style="color:red;padding:10px;">加载失败</div>'; }
-}
-
-function renderTree() {
-  if (!adminData.tree || adminData.tree.length === 0) {
-    treeContainer.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;">暂无公开内容</div>';
-    return;
-  }
-  treeContainer.innerHTML = adminData.tree.map(n => renderTreeNode(n)).join("");
-  bindTreeEvents();
-}
-
-function renderTreeNode(node) {
-  const hasChildren = node.children && node.children.length > 0;
-  const isExpanded = expandedIds.has(node.id);
-  const isActive = currentSelectedId === node.id;
-  const icon = node.icon ? `<img src="${node.icon}">` : "";
-  let html = `<div class="tree-node"><div class="tree-node-row ${isActive?'active':''}" data-id="${node.id}" data-has-children="${hasChildren}"><span class="arrow ${isExpanded?'expanded':''}">${hasChildren?'▶':''}</span>${icon}<span>${escapeHtml(node.name)}</span></div>`;
-  if (hasChildren) {
-    html += `<div class="tree-children ${isExpanded?'':'hidden'}">` + node.children.map(c => renderTreeNode(c)).join("") + `</div>`;
-  }
-  return html + `</div>`;
-}
-
-function bindTreeEvents() {
-  document.querySelectorAll(".tree-node-row").forEach(row => {
-    row.addEventListener("click", e => {
-      const id = row.dataset.id;
-      const hasChildren = row.dataset.hasChildren === "true";
-      if (e.target.classList.contains("arrow") && hasChildren) {
-        if (expandedIds.has(id)) expandedIds.delete(id); else expandedIds.add(id);
-        renderTree(); return;
-      }
-      if (hasChildren) expandedIds.add(id);
-      selectNode(id);
-    });
-  });
-}
-
-async function selectNode(id) {
-  currentSelectedId = id;
-  renderTree();
-  resultArea.classList.remove("show");
-  contentPanel.innerHTML = '<div style="text-align:center;padding:40px;">加载中...</div>';
-  try {
-    const res = await fetch(API_BASE + '/api/node?id=' + encodeURIComponent(id));
-    const data = await res.json();
-    if (data.ok) renderNodeContent(data.node);
-    else contentPanel.innerHTML = '<div style="color:red;">加载失败</div>';
-  } catch (e) { contentPanel.innerHTML = '<div style="color:red;">网络错误</div>'; }
-}
-
-function renderNodeContent(node) {
-  const links = node.links || [];
-  const icon = node.icon ? `<img src="${node.icon}" style="width:32px;">` : "";
-  let html = `<div class="content-header">${icon}<h2>${escapeHtml(node.name)}</h2></div>`;
-  if (links.length === 0) {
-    html += '<div style="text-align:center;padding:40px;color:#94a3b8;">暂无磁力链接</div>';
-  } else {
-    links.forEach(l => {
-      html += `<div class="link-row"><div class="link-info"><div class="link-name">${escapeHtml(l.name)}</div><div class="link-size">${escapeHtml(l.size||"")}</div></div><div class="link-actions"><button class="btn-copy" onclick="navigator.clipboard.writeText('${l.magnet}'); alert('已复制')">复制磁力链接</button></div></div>`;
-    });
-  }
-  contentPanel.innerHTML = html;
-}
-
-// ===== 管理员后台逻辑 =====
-async function loadAdminData() {
-  try {
-    const iconRes = await fetch(API_BASE + '/api/icons');
-    const iconData = await iconRes.json();
-    if (iconData.ok && Array.isArray(iconData.icons)) availableIcons = iconData.icons;
-
-    const res = await fetch(API_BASE + '/api/admin/get', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: adminPasswordCache })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      adminData = data.data;
-      if (!adminData.tree) adminData.tree = [];
-      if (!adminData.codes) adminData.codes = [];
-      if (availableIcons.length > 0) iconsListInput.value = availableIcons.join("\n");
-      renderAdmin();
-    }
-  } catch (e) { showToast("加载后台数据失败"); }
-}
-
-function renderAdmin() {
-  // 1. 渲染提取码
-  adminCodeList.innerHTML = adminData.codes.map((c, ci) => `
-    <div class="admin-code-card">
-      <div class="admin-code-header">
-        <label>提取码：</label><input type="text" class="code-val code-input" value="${escapeHtml(c.code)}" data-ci="${ci}">
-        <label>标题：</label><input type="text" class="title-val title-input" value="${escapeHtml(c.title||"")}" data-ci="${ci}">
-        <button class="btn-small btn-danger del-code-btn" data-ci="${ci}">删除</button>
-      </div>
-      <div>${(c.links || []).map((l, li) => `
-        <div class="admin-link-edit-row" data-ci="${ci}" data-li="${li}">
-          <input type="text" class="link-name" value="${escapeHtml(l.name||"")}" placeholder="文件名">
-          <input type="text" class="link-size" value="${escapeHtml(l.size||"")}" placeholder="大小">
-          <input type="text" class="link-magnet" value="${escapeHtml(l.magnet||"")}" placeholder="磁力链接">
-          <button class="btn-icon del-code-link-btn" data-ci="${ci}" data-li="${li}">×</button>
-        </div>`).join("")}
-      </div>
-      <button class="btn-small btn-secondary add-code-link-btn" data-ci="${ci}">+ 链接</button>
+  <div class="main-layout" id="publicView">
+    <div class="tree-panel">
+      <div style="font-size: 0.8rem; font-weight: 600; color: #94a3b8; margin-bottom: 12px;">公开目录</div>
+      <div id="treeContainer"></div>
     </div>
-  `).join("");
-
-  // 2. 渲染公开目录树
-  adminTreeList.innerHTML = adminData.tree.map((node, i) => renderAdminNode(node, [i])).join("");
-
-  bindAdminEvents();
-}
-
-function renderAdminNode(node, pathArr) {
-  const path = pathArr.join("-");
-  let html = `
-    <div class="admin-code-card" data-path="${path}">
-      <div class="admin-code-header">
-        <label>名称</label><input type="text" class="node-name title-input" value="${escapeHtml(node.name)}" data-path="${path}">
-        <button class="btn-small btn-secondary" data-action="add-child" data-path="${path}">+ 子节点</button>
-        <button class="btn-small btn-danger" data-action="delete-node" data-path="${path}">删除</button>
-      </div>
-      <div>${(node.links || []).map((l, li) => `
-        <div class="admin-link-edit-row" data-path="${path}" data-li="${li}">
-          <input type="text" class="link-name" value="${escapeHtml(l.name||"")}" placeholder="文件名">
-          <input type="text" class="link-size" value="${escapeHtml(l.size||"")}" placeholder="大小">
-          <input type="text" class="link-magnet" value="${escapeHtml(l.magnet||"")}" placeholder="磁力链接">
-          <button class="btn-icon del-tree-link-btn" data-path="${path}" data-li="${li}">×</button>
-        </div>`).join("")}
-      </div>
-      <button class="btn-small btn-secondary add-tree-link-btn" data-path="${path}">+ 链接</button>
+    <div class="content-panel" id="contentPanel">
+      <div style="text-align: center; padding: 60px 20px; color: #94a3b8;">请从左侧选择一个节点</div>
     </div>
-  `;
-  if (node.children && node.children.length > 0) {
-    html += `<div style="margin-left:20px;border-left:1px dashed #cbd5e1;padding-left:10px;">` + node.children.map((c, i) => renderAdminNode(c, [...pathArr, i])).join("") + `</div>`;
-  }
-  return html;
-}
+  </div>
 
-function getNodeByPath(path) {
-  if (!path) return null;
-  const parts = path.split("-").map(Number);
-  let nodes = adminData.tree, node = null;
-  for (const i of parts) {
-    node = nodes[i]; if (!node) return null;
-    nodes = node.children || [];
-  }
-  return node;
-}
+  <div class="admin-view" id="adminView">
+    <div class="admin-toolbar">
+      <div style="font-weight: 600;">数据管理</div>
+      <div>
+        <button class="btn-small btn-secondary" id="addRootNodeBtn">+ 公开根目录</button>
+        <button class="btn-small btn-secondary" id="addCodeBtn">+ 提取码</button>
+        <button class="btn-small btn-primary" id="saveBtn">保存</button>
+        <button class="btn-small btn-danger" id="exitAdminBtn">退出</button>
+      </div>
+    </div>
+    <div class="icons-editor">
+      <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">图标链接清单 (一行一个 URL)</div>
+      <textarea id="iconsListInput" placeholder="https://..."></textarea>
+    </div>
+    <div style="font-weight: 600; color: #ef4444; margin-top: 10px;">提取码管理</div>
+    <div id="adminCodeList"></div>
+    <div style="font-weight: 600; color: #3b82f6; margin-top: 20px;">公开目录管理</div>
+    <div id="adminTreeList"></div>
+  </div>
 
-function bindAdminEvents() {
-  // 提取码输入同步
-  adminCodeList.querySelectorAll("input").forEach(inp => {
-    inp.addEventListener("input", e => {
-      const ci = Number(inp.dataset.ci);
-      const li = inp.dataset.li !== undefined ? Number(inp.dataset.li) : null;
-      if (inp.classList.contains("code-val")) adminData.codes[ci].code = e.target.value;
-      if (inp.classList.contains("title-val")) adminData.codes[ci].title = e.target.value;
-      if (li !== null) {
-        if (inp.classList.contains("link-name")) adminData.codes[ci].links[li].name = e.target.value;
-        if (inp.classList.contains("link-size")) adminData.codes[ci].links[li].size = e.target.value;
-        if (inp.classList.contains("link-magnet")) adminData.codes[ci].links[li].magnet = e.target.value;
-      }
-    });
-  });
-  adminCodeList.querySelectorAll(".del-code-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const ci = Number(btn.dataset.ci);
-      if (confirm(`确定删除提取码「${adminData.codes[ci].code}」吗？`)) {
-        adminData.codes.splice(ci, 1); renderAdmin();
-      }
-    });
-  });
-  adminCodeList.querySelectorAll(".add-code-link-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const ci = Number(btn.dataset.ci);
-      if (!adminData.codes[ci].links) adminData.codes[ci].links = [];
-      adminData.codes[ci].links.push({ name: "", size: "", magnet: "" }); renderAdmin();
-    });
-  });
-  adminCodeList.querySelectorAll(".del-code-link-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const ci = Number(btn.dataset.ci), li = Number(btn.dataset.li);
-      adminData.codes[ci].links.splice(li, 1); renderAdmin();
-    });
-  });
+  <div class="modal-mask" id="codeModal">
+    <div class="modal">
+      <h3 style="margin-bottom: 20px;">请输入提取码</h3>
+      <input type="password" id="codeInput" placeholder="请输入提取码">
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn-secondary" id="codeCancel" style="padding: 10px 24px; border-radius: 8px; cursor: pointer;">取消</button>
+        <button class="btn-primary" id="codeConfirm" style="padding: 10px 24px; border-radius: 8px; cursor: pointer;">确认</button>
+      </div>
+    </div>
+  </div>
 
-  // 目录树输入同步
-  adminTreeList.querySelectorAll(".node-name").forEach(inp => {
-    inp.addEventListener("input", e => {
-      const node = getNodeByPath(inp.dataset.path);
-      if (node) node.name = e.target.value;
-    });
-  });
-  adminTreeList.querySelectorAll(".admin-link-edit-row").forEach(row => {
-    const path = row.dataset.path, li = Number(row.dataset.li);
-    row.querySelector(".link-name").addEventListener("input", e => {
-      const node = getNodeByPath(path); if (node && node.links[li]) node.links[li].name = e.target.value;
-    });
-    row.querySelector(".link-size").addEventListener("input", e => {
-      const node = getNodeByPath(path); if (node && node.links[li]) node.links[li].size = e.target.value;
-    });
-    row.querySelector(".link-magnet").addEventListener("input", e => {
-      const node = getNodeByPath(path); if (node && node.links[li]) node.links[li].magnet = e.target.value;
-    });
-  });
-  adminTreeList.querySelectorAll(".del-tree-link-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const node = getNodeByPath(btn.dataset.path);
-      if (node) { node.links.splice(Number(btn.dataset.li), 1); renderAdmin(); }
-    });
-  });
-  adminTreeList.querySelectorAll(".add-tree-link-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const node = getNodeByPath(btn.dataset.path);
-      if (node) {
-        if (!node.links) node.links = [];
-        node.links.push({ name: "", size: "", magnet: "" }); renderAdmin();
+  <div class="toast" id="toast">已复制</div>
+
+  <script>
+    // ⚠️ 替换为你的 Cloudflare 地址（末尾别加斜杠）
+    const API_BASE = 'https://box.huanglcl7.workers.dev';
+    let isAdmin = false, adminPasswordCache = "", adminData = { tree: [], codes: [] }, currentSelectedId = null;
+    const expandedIds = new Set();
+
+    const $ = id => document.getElementById(id);
+
+    function showToast(msg) {
+      $("toast").textContent = msg;
+      $("toast").classList.add("show");
+      setTimeout(() => $("toast").classList.remove("show"), 2000);
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // === 连点弹窗 ===
+    let clickCount = 0, clickTimer = null;
+    $("secretTrigger").addEventListener('click', () => {
+      clickCount++;
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
+      if (clickCount >= 5) {
+        clickCount = 0;
+        $("codeInput").value = "";
+        $("codeModal").classList.add('show');
+        setTimeout(() => $("codeInput").focus(), 100);
       }
     });
-  });
-  adminTreeList.querySelectorAll('button[data-action="add-child"]').forEach(btn => {
-    btn.addEventListener("click", () => {
-      const node = getNodeByPath(btn.dataset.path);
-      if (node) {
-        if (!node.children) node.children = [];
-        node.children.push({ id: "n-" + Date.now(), name: "新节点", children: [], links: [] }); renderAdmin();
-      }
-    });
-  });
-  adminTreeList.querySelectorAll('button[data-action="delete-node"]').forEach(btn => {
-    btn.addEventListener("click", () => {
-      const path = btn.dataset.path;
-      if (confirm("确定删除此节点及其所有子节点吗？")) {
-        const parts = path.split("-").map(Number);
-        if (parts.length === 1) adminData.tree.splice(parts[0], 1);
-        else {
-          const parentParts = parts.slice(0, -1);
-          let nodes = adminData.tree;
-          for (const i of parentParts) nodes = nodes[i].children || [];
-          nodes.splice(parts[parts.length - 1], 1);
+
+    $("codeCancel").addEventListener('click', () => $("codeModal").classList.remove('show'));
+
+    $("codeConfirm").addEventListener('click', async () => {
+      const val = $("codeInput").value.trim();
+      if (!val) return alert('请输入提取码');
+      $("codeModal").classList.remove('show');
+
+      try {
+        const loginRes = await fetch(API_BASE + '/api/admin/login', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: val })
+        });
+        const loginData = await loginRes.json();
+        if (loginData.ok) {
+          adminPasswordCache = val;
+          isAdmin = true;
+          document.body.classList.add("admin-mode");
+          await loadAdminData();
+          showToast("管理员登录成功");
+          return;
         }
-        renderAdmin();
+
+        const verifyRes = await fetch(API_BASE + '/api/verify', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: val })
+        });
+        const verifyData = await verifyRes.json();
+        if (verifyData.ok) {
+          renderResult(verifyData.data);
+        } else {
+          alert("提取码错误");
+        }
+      } catch (err) {
+        alert("网络错误，无法连接后端");
       }
     });
-  });
-}
 
-$("addRootNodeBtn").addEventListener("click", () => {
-  adminData.tree.push({ id: "n-" + Date.now(), name: "新目录", children: [], links: [] });
-  renderAdmin();
-});
+    // === 渲染公开结果 ===
+    function renderResult(data) {
+      $("resultArea").classList.add("show");
+      $("resultTitle").textContent = data.title || "提取结果";
+      if (!data.links || data.links.length === 0) {
+        $("resultLinks").innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;">暂无内容</div>';
+        return;
+      }
+      let html = "";
+      data.links.forEach(l => {
+        html += `<div class="link-row"><div><div style="font-weight:600">${escapeHtml(l.name)}</div><div style="font-size:0.85rem">${escapeHtml(l.size||"")}</div></div><div><button class="btn-copy" onclick="navigator.clipboard.writeText('${l.magnet}'); alert('已复制')">复制磁力链接</button></div></div>`;
+      });
+      $("resultLinks").innerHTML = html;
+    }
 
-$("addCodeBtn").addEventListener("click", () => {
-  const randomCode = Math.random().toString(36).substring(2, 6);
-  adminData.codes.unshift({ code: randomCode, title: "新提取码", links: [] });
-  renderAdmin();
-});
+    // === 加载目录树 ===
+    async function loadPublicTree() {
+      try {
+        const res = await fetch(API_BASE + '/api/tree');
+        const data = await res.json();
+        if (data.ok) {
+          adminData.tree = data.tree || [];
+          renderTree();
+          if (adminData.tree.length > 0 && !currentSelectedId) selectNode(adminData.tree[0].id);
+        }
+      } catch (e) { $("treeContainer").innerHTML = '<div style="color:red;padding:10px;">加载失败</div>'; }
+    }
 
-$("saveBtn").addEventListener("click", async () => {
-  const btn = $("saveBtn");
-  btn.disabled = true; btn.textContent = "保存中...";
-  const iconList = iconsListInput.value.split("\n").map( => .trim()).filter( => .length > 0);
-  try {
-    const res = await fetch(API_BASE + '/api/admin/save', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: adminPasswordCache, data: adminData, icons: iconList })
+    function renderTree() {
+      if (!adminData.tree || adminData.tree.length === 0) {
+        $("treeContainer").innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;">暂无公开内容</div>';
+        return;
+      }
+      $("treeContainer").innerHTML = adminData.tree.map(n => renderTreeNode(n)).join("");
+      bindTreeEvents();
+    }
+
+    function renderTreeNode(node) {
+      const hasChildren = node.children && node.children.length > 0;
+      const isExpanded = expandedIds.has(node.id);
+      const isActive = currentSelectedId === node.id;
+      const icon = node.icon ? `<img src="${node.icon}">` : "";
+      let html = `<div><div class="tree-node-row ${isActive?'active':''}" data-id="${node.id}" data-has-children="${hasChildren}"><span>${hasChildren?'▶':''}</span>${icon}<span>${escapeHtml(node.name)}</span></div>`;
+      if (hasChildren) {
+        html += `<div class="tree-children ${isExpanded?'':'hidden'}">` + node.children.map(c => renderTreeNode(c)).join("") + `</div>`;
+      }
+      return html + `</div>`;
+    }
+
+    function bindTreeEvents() {
+      document.querySelectorAll(".tree-node-row").forEach(row => {
+        row.addEventListener("click", e => {
+          const id = row.dataset.id;
+          const hasChildren = row.dataset.hasChildren === "true";
+          if (hasChildren) expandedIds.add(id);
+          selectNode(id);
+        });
+      });
+    }
+
+    async function selectNode(id) {
+      currentSelectedId = id;
+      renderTree();
+      $("resultArea").classList.remove("show");
+      $("contentPanel").innerHTML = '<div style="text-align:center;">加载中...</div>';
+      try {
+        const res = await fetch(API_BASE + '/api/node?id=' + encodeURIComponent(id));
+        const data = await res.json();
+        if (data.ok) renderNodeContent(data.node);
+        else $("contentPanel").innerHTML = '<div style="color:red;">加载失败</div>';
+      } catch (e) { $("contentPanel").innerHTML = '<div style="color:red;">网络错误</div>'; }
+    }
+
+    function renderNodeContent(node) {
+      const links = node.links || [];
+      const icon = node.icon ? `<img src="${node.icon}" style="width:32px;vertical-align:middle;margin-right:12px;">` : "";
+      let html = `<h2>${icon}${escapeHtml(node.name)}</h2>`;
+      if (links.length === 0) {
+        html += '<div style="text-align:center;padding:40px;color:#94a3b8;">暂无磁力链接</div>';
+      } else {
+        links.forEach(l => {
+          html += `<div class="link-row" style="margin-top:12px;"><div><div style="font-weight:600">${escapeHtml(l.name)}</div><div style="font-size:0.85rem">${escapeHtml(l.size||"")}</div></div><div><button class="btn-copy" onclick="navigator.clipboard.writeText('${l.magnet}'); alert('已复制')">复制磁力链接</button></div></div>`;
+        });
+      }
+      $("contentPanel").innerHTML = html;
+    }
+
+    // === 管理员后台逻辑 ===
+    async function loadAdminData() {
+      try {
+        const res = await fetch(API_BASE + '/api/admin/get', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: adminPasswordCache })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          adminData = data.data;
+          if (!adminData.tree) adminData.tree = [];
+          if (!adminData.codes) adminData.codes = [];
+          renderAdmin();
+        }
+      } catch (e) { showToast("加载后台数据失败"); }
+    }
+
+    function renderAdmin() {
+      $("adminCodeList").innerHTML = adminData.codes.map((c, ci) => `
+        <div class="admin-code-card">
+          <div class="admin-code-header">
+            <label>提取码：</label><input type="text" class="code-val" value="${escapeHtml(c.code)}" data-ci="${ci}">
+            <label>标题：</label><input type="text" class="title-val" value="${escapeHtml(c.title||"")}" data-ci="${ci}">
+            <button class="btn-small btn-danger del-code-btn" data-ci="${ci}">删除</button>
+          </div>
+          <div>${(c.links || []).map((l, li) => `
+            <div class="admin-link-edit-row" data-ci="${ci}" data-li="${li}">
+              <input type="text" class="link-name" value="${escapeHtml(l.name||"")}" placeholder="文件名">
+              <input type="text" class="link-size" value="${escapeHtml(l.size||"")}" placeholder="大小">
+              <input type="text" class="link-magnet" value="${escapeHtml(l.magnet||"")}" placeholder="磁力链接">
+              <button class="btn-icon del-code-link-btn" data-ci="${ci}" data-li="${li}">×</button>
+            </div>`).join("")}
+          </div>
+          <button class="btn-small btn-secondary add-code-link-btn" data-ci="${ci}">+ 链接</button>
+        </div>
+      `).join("");
+
+      $("adminTreeList").innerHTML = adminData.tree.map((node, i) => renderAdminNode(node, [i])).join("");
+      bindAdminEvents();
+    }
+
+    function renderAdminNode(node, pathArr) {
+      const path = pathArr.join("-");
+      let html = `
+        <div class="admin-code-card" data-path="${path}">
+          <div class="admin-code-header">
+            <label>名称</label><input type="text" class="node-name" value="${escapeHtml(node.name)}" data-path="${path}">
+            <button class="btn-small btn-secondary" data-action="add-child" data-path="${path}">+ 子节点</button>
+            <button class="btn-small btn-danger" data-action="delete-node" data-path="${path}">删除</button>
+          </div>
+          <div>${(node.links || []).map((l, li) => `
+            <div class="admin-link-edit-row" data-path="${path}" data-li="${li}">
+              <input type="text" class="link-name" value="${escapeHtml(l.name||"")}" placeholder="文件名">
+              <input type="text" class="link-size" value="${escapeHtml(l.size||"")}" placeholder="大小">
+              <input type="text" class="link-magnet" value="${escapeHtml(l.magnet||"")}" placeholder="磁力链接">
+              <button class="btn-icon del-tree-link-btn" data-path="${path}" data-li="${li}">×</button>
+            </div>`).join("")}
+          </div>
+          <button class="btn-small btn-secondary add-tree-link-btn" data-path="${path}">+ 链接</button>
+        </div>
+      `;
+      if (node.children && node.children.length > 0) {
+        html += `<div style="margin-left:20px;border-left:1px dashed #cbd5e1;padding-left:10px;">` + node.children.map((c, i) => renderAdminNode(c, [...pathArr, i])).join("") + `</div>`;
+      }
+      return html;
+    }
+
+    function getNodeByPath(path) {
+      if (!path) return null;
+      const parts = path.split("-").map(Number);
+      let nodes = adminData.tree, node = null;
+      for (const i of parts) {
+        node = nodes[i]; if (!node) return null;
+        nodes = node.children || [];
+      }
+      return node;
+    }
+
+    function bindAdminEvents() {
+      $("adminCodeList").querySelectorAll("input").forEach(inp => {
+        inp.addEventListener("input", e => {
+          const ci = Number(inp.dataset.ci);
+          const li = inp.dataset.li !== undefined ? Number(inp.dataset.li) : null;
+          if (inp.classList.contains("code-val")) adminData.codes[ci].code = e.target.value;
+          if (inp.classList.contains("title-val")) adminData.codes[ci].title = e.target.value;
+          if (li !== null) {
+            if (inp.classList.contains("link-name")) adminData.codes[ci].links[li].name = e.target.value;
+            if (inp.classList.contains("link-size")) adminData.codes[ci].links[li].size = e.target.value;
+            if (inp.classList.contains("link-magnet")) adminData.codes[ci].links[li].magnet = e.target.value;
+          }
+        });
+      });
+      $("adminCodeList").querySelectorAll(".del-code-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const ci = Number(btn.dataset.ci);
+          if (confirm(`确定删除提取码？`)) { adminData.codes.splice(ci, 1); renderAdmin(); }
+        });
+      });
+      $("adminCodeList").querySelectorAll(".add-code-link-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const ci = Number(btn.dataset.ci);
+          if (!adminData.codes[ci].links) adminData.codes[ci].links = [];
+          adminData.codes[ci].links.push({ name: "", size: "", magnet: "" }); renderAdmin();
+        });
+      });
+      $("adminCodeList").querySelectorAll(".del-code-link-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const ci = Number(btn.dataset.ci), li = Number(btn.dataset.li);
+          adminData.codes[ci].links.splice(li, 1); renderAdmin();
+        });
+      });
+
+      $("adminTreeList").querySelectorAll(".node-name").forEach(inp => {
+        inp.addEventListener("input", e => {
+          const node = getNodeByPath(inp.dataset.path);
+          if (node) node.name = e.target.value;
+        });
+      });
+      $("adminTreeList").querySelectorAll(".admin-link-edit-row").forEach(row => {
+        const path = row.dataset.path, li = Number(row.dataset.li);
+        row.querySelector(".link-name").addEventListener("input", e => {
+          const node = getNodeByPath(path); if (node && node.links[li]) node.links[li].name = e.target.value;
+        });
+        row.querySelector(".link-size").addEventListener("input", e => {
+          const node = getNodeByPath(path); if (node && node.links[li]) node.links[li].size = e.target.value;
+        });
+        row.querySelector(".link-magnet").addEventListener("input", e => {
+          const node = getNodeByPath(path); if (node && node.links[li]) node.links[li].magnet = e.target.value;
+        });
+      });
+      $("adminTreeList").querySelectorAll(".del-tree-link-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const node = getNodeByPath(btn.dataset.path);
+          if (node) { node.links.splice(Number(btn.dataset.li), 1); renderAdmin(); }
+        });
+      });
+      $("adminTreeList").querySelectorAll(".add-tree-link-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const node = getNodeByPath(btn.dataset.path);
+          if (node) {
+            if (!node.links) node.links = [];
+            node.links.push({ name: "", size: "", magnet: "" }); renderAdmin();
+          }
+        });
+      });
+      $("adminTreeList").querySelectorAll('button[data-action="add-child"]').forEach(btn => {
+        btn.addEventListener("click", () => {
+          const node = getNodeByPath(btn.dataset.path);
+          if (node) {
+            if (!node.children) node.children = [];
+            node.children.push({ id: "n-" + Date.now(), name: "新节点", children: [], links: [] }); renderAdmin();
+          }
+        });
+      });
+      $("adminTreeList").querySelectorAll('button[data-action="delete-node"]').forEach(btn => {
+        btn.addEventListener("click", () => {
+          const path = btn.dataset.path;
+          if (confirm("确定删除此节点？")) {
+            const parts = path.split("-").map(Number);
+            if (parts.length === 1) adminData.tree.splice(parts[0], 1);
+            else {
+              const parentParts = parts.slice(0, -1);
+              let nodes = adminData.tree;
+              for (const i of parentParts) nodes = nodes[i].children || [];
+              nodes.splice(parts[parts.length - 1], 1);
+            }
+            renderAdmin();
+          }
+        });
+      });
+    }
+
+    $("addRootNodeBtn").addEventListener("click", () => {
+      adminData.tree.push({ id: "n-" + Date.now(), name: "新目录", children: [], links: [] });
+      renderAdmin();
     });
-    const data = await res.json();
-    if (data.ok) {
-      availableIcons = iconList;
-      showToast("保存成功");
-      loadPublicTree(); // 刷新主页数据
-    } else showToast("保存失败：" + data.error);
-  } catch (e) { showToast("网络错误：" + e.message); }
-  finally { btn.disabled = false; btn.textContent = "保存"; }
-});
 
-$("exitAdminBtn").addEventListener("click", () => {
-  isAdmin = false; adminPasswordCache = "";
-  document.body.classList.remove("admin-mode");
-  resultArea.classList.remove("show");
-  showToast("已退出管理面板");
-  loadPublicTree();
-});
+    $("addCodeBtn").addEventListener("click", () => {
+      const randomCode = Math.random().toString(36).substring(2, 6);
+      adminData.codes.unshift({ code: randomCode, title: "新提取码", links: [] });
+      renderAdmin();
+    });
 
-// 初始化加载
-loadPublicTree();
-</script>
+    $("saveBtn").addEventListener("click", async () => {
+      const btn = $("saveBtn");
+      btn.disabled = true; btn.textContent = "保存中...";
+      try {
+        const res = await fetch(API_BASE + '/api/admin/save', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPasswordCache, data: adminData })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast("保存成功");
+          loadPublicTree();
+        } else showToast("保存失败");
+      } catch (e) { showToast("网络错误"); }
+      finally { btn.disabled = false; btn.textContent = "保存"; }
+    });
+
+    $("exitAdminBtn").addEventListener("click", () => {
+      isAdmin = false; adminPasswordCache = "";
+      document.body.classList.remove("admin-mode");
+      $("resultArea").classList.remove("show");
+      showToast("已退出管理面板");
+      loadPublicTree();
+    });
+
+    loadPublicTree();
+  </script>
 </body>
 </html>
