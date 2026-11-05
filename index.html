@@ -84,7 +84,7 @@
     <h3>请输入提取码</h3>
     <input type="password" id="codeInput" placeholder="提取码或管理员密码">
     <div class="btn-row">
-      <!-- 直接在 HTML 里绑定点击事件，绝对生效 -->
+      <!-- 注意这里：取消直接关掉，确认调用下面的 handleAdminLogin 函数 -->
       <button class="btn-secondary" onclick="document.getElementById('codeModal').classList.remove('show')">取消</button>
       <button class="btn-primary" onclick="handleAdminLogin()">确认</button>
     </div>
@@ -92,13 +92,12 @@
 </div><div class="modal-mask" id="iconModal"><div class="modal wide"><h3>选择图标</h3><div class="icon-grid" id="iconGrid"></div><div class="btn-row" style="margin-top:16px;justify-content:flex-end;"><button class="btn-secondary" id="closeIconModal">取消</button></div></div></div>
 <div class="toast" id="toast">已复制</div>
 <script>// 把下面这行换成你真实的 Worker 地址！结尾不要带斜杠！
-const API_BASE = 'https://box.huanglcl7.workers.dev'; 
-
-let clickCount = 0;
-let clickTimer = null;
+const API_BASE = 'https://box.huanglcl7.workers.dev'; // 结尾别带斜杠！
 let adminPassword = "";
 
-// 连点逻辑
+// 1. 连点 5 下逻辑
+let clickCount = 0;
+let clickTimer = null;
 document.getElementById('secretTrigger').addEventListener('click', function() {
   clickCount++;
   if (clickCount >= 5) {
@@ -112,40 +111,36 @@ document.getElementById('secretTrigger').addEventListener('click', function() {
   }
 });
 
-// 取消按钮
-document.getElementById('codeCancel').addEventListener('click', function() {
-  document.getElementById('codeModal').classList.remove('show');
-});
-
-// 确认按钮（核心：登录与提取逻辑）
-document.getElementById('codeConfirm').addEventListener('click', async function() {
-  const val = document.getElementById('codeInput').value.trim();
-  if (!val) return alert('请输入密码或提取码');
+// 2. 核心函数：处理弹窗里的确认按钮（解决你报错的元凶）
+async function handleAdminLogin() {
+  const pwd = document.getElementById('codeInput').value.trim();
+  if (!pwd) { alert('请输入密码或提取码'); return; }
   
   document.getElementById('codeModal').classList.remove('show');
+  document.getElementById('resultArea').classList.remove('show');
 
   try {
-    // 1. 尝试管理员登录
+    // --- 尝试管理员登录 ---
     const loginRes = await fetch(API_BASE + '/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: val })
+      body: JSON.stringify({ password: pwd })
     });
     const loginData = await loginRes.json();
 
     if (loginData.ok) {
-      adminPassword = val;
+      adminPassword = pwd;
       document.body.classList.add('admin-mode');
       alert('管理员登录成功！');
-      loadAdminPanel();
+      loadAdminPanel(); // 加载后台数据
       return;
     }
 
-    // 2. 提取码验证
+    // --- 尝试提取码验证 ---
     const verifyRes = await fetch(API_BASE + '/api/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: val })
+      body: JSON.stringify({ code: pwd })
     });
     const verifyData = await verifyRes.json();
 
@@ -171,14 +166,15 @@ document.getElementById('codeConfirm').addEventListener('click', async function(
       }
       links.innerHTML = html;
     } else {
-      alert('提取码错误！');
+      alert('提取码或密码错误！');
     }
   } catch (err) {
-    alert('网络错误，无法连接后端！');
+    alert('网络请求失败，请检查 Cloudflare 后端地址！');
+    console.error(err);
   }
-});
+}
 
-// 加载后台数据
+// 3. 加载后台数据
 async function loadAdminPanel() {
   try {
     const res = await fetch(API_BASE + '/api/admin/get', {
@@ -189,8 +185,8 @@ async function loadAdminPanel() {
     const data = await res.json();
     if (data.ok) {
       const container = document.getElementById('adminCodeList');
-      // 如果后台容器是空的，说明没报错，我们随便渲染点什么证明进去了
       if (container) {
+        // 极简渲染，证明进了后台
         container.innerHTML = data.data.codes.map(function(c) {
           return '<div class="admin-code-card" style="border-left:4px solid red; padding:10px; margin-bottom:10px; background:#fff;">' +
                  '<div><b>提取码：</b>' + c.code + ' | <b>标题：</b>' + (c.title || '无') + '</div>' +
@@ -201,7 +197,7 @@ async function loadAdminPanel() {
   } catch (e) {}
 }
 
-// 页面加载时拉取公开目录
+// 4. 页面加载时拉取公开目录
 window.onload = async function() {
   try {
     const res = await fetch(API_BASE + '/api/tree');
