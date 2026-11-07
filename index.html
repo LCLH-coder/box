@@ -5,43 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LCL H的百宝箱</title>
   <style>
-    /* 全局基础 */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 30px 20px; }
-    
-    /* 顶部标题 */
     .header { width: 100%; max-width: 1000px; margin-bottom: 24px; display: flex; align-items: center; }
     .header h1 { font-size: 2rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 12px; user-select: none; }
     .secret-trigger { cursor: pointer; }
     
-    /* 主布局 */
     .main-layout { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 260px 1fr; gap: 20px; min-height: 500px; }
     .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; overflow-y: auto; max-height: 75vh; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
     
-    /* 左侧目录树 */
     .tree-title { font-size: 0.85rem; font-weight: 600; color: #94a3b8; margin-bottom: 16px; }
-    .tree-node-row { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 0.95rem; color: #334155; transition: all 0.15; }
+    .tree-node-row { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 0.95rem; color: #334155; transition: all 0.15s; }
     .tree-node-row:hover { background: #f1f5f9; }
     .tree-node-row.active { background: #e0f2fe; color: #0284c7; font-weight: 500; }
-    .tree-node-row .arrow { width: 16px; font-size: 0.7rem; color: #94a3b8; text-align: center; transition: transform 0.2; }
+    .tree-node-row .arrow { width: 16px; font-size: 0.7rem; color: #94a3b8; text-align: center; transition: transform 0.2s; }
     .tree-node-row .arrow.expanded { transform: rotate(90deg); }
     .tree-node-row img { width: 18px; height: 18px; object-fit: contain; }
     .tree-children { margin-left: 16px; border-left: 1px dashed #cbd5e1; padding-left: 8px; }
     .tree-children.hidden { display: none; }
     
-    /* 右侧内容区 */
     .content-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9; }
     .content-header img { width: 32px; height: 32px; object-fit: contain; }
     .content-header h2 { font-size: 1.3rem; color: #0f172a; }
     
-    /* 文件列表卡片 */
     .link-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-radius: 12px; background: #f8fafc; margin-bottom: 10px; border: 1px solid #e2e8f0; gap: 12px; flex-wrap: wrap; }
     .link-info { flex: 1; min-width: 200px; }
     .link-name { font-weight: 600; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
     .link-size { font-size: 0.85rem; color: #64748b; }
     
-    /* 按钮样式 */
-    button { cursor: pointer; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.85rem; font-weight: 500; transition: all 0.15; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
+    button { cursor: pointer; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.85rem; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
     button:active { transform: scale(0.96); }
     .btn-copy { background: #eff6ff; color: #2563eb; }
     .btn-copy:hover { background: #dbeafe; }
@@ -51,13 +43,10 @@
     .btn-gray:hover { background: #e2e8f0; }
     .btn-red { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
     .btn-red:hover { background: #fecaca; }
-    .btn-icon { background: #fee2e2; color: #dc2626; border-radius: 6px; padding: 6px 10px; }
     
-    /* 提取结果卡片 */
     .result-area { display: none; width: 100%; max-width: 1000px; margin-top: 24px; }
     .result-area.show { display: block; }
     
-    /* 后台管理面板 */
     .admin-view { display: none; width: 100%; max-width: 1000px; margin-top: 24px; }
     .admin-view.show { display: block; }
     .toolbar { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
@@ -65,17 +54,13 @@
     .card-header { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed #e2e8f0; flex-wrap: wrap; }
     .card-header input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; }
     .card-header input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-    .admin-link-edit { display: grid; grid-template-columns: 1fr 80px 2fr 40px; gap: 8px; margin-bottom: 8px; }
-    .admin-link-edit input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; }
-    .admin-link-edit input:focus { border-color: #3b82f6; }
     
-    /* 弹窗 */
     .modal-mask { position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-mask.show { display: flex; }
     .modal { background: #fff; border-radius: 16px; padding: 28px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
     .modal h3 { margin-bottom: 20px; font-size: 1.2rem; color: #0f172a; }
-    .modal input { width: 100%; padding: 12px 16px; margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; outline: none; text-align: left !important; letter-spacing: 1px; }
-.modal input::placeholder { text-align: left; }
+    .modal input { width: 100%; padding: 12px 16px; margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; outline: none; text-align: left; letter-spacing: 1px; }
+    .modal input::placeholder { text-align: left; }
     .modal input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
     .modal-btns { display: flex; gap: 10px; justify-content: center; }
     .modal-btns button { flex: 1; padding: 12px; font-size: 0.95rem; }
@@ -107,11 +92,6 @@
 
   <div class="admin-view" id="adminView">
     <div class="toolbar">
-          <!-- 加在这里：图标清单卡片 -->
-      <div class="card" style="margin-bottom: 20px;">
-        <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 8px;">图标链接清单 (一行一个绝对 URL)</div>
-        <textarea id="iconsListInput" style="width: 100%; min-height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: monospace; font-size: 0.85rem; outline: none;" placeholder="https://cdn.jsdelivr.net/gh/user/repo@main/icons/default.ico"></textarea>
-      </div>
       <div style="font-weight: 600; color: #ef4444;">管理员控制台</div>
       <div style="display: flex; gap: 10px;">
         <button class="btn-gray" onclick="addRootNode()">+ 公开根目录</button>
@@ -120,6 +100,13 @@
         <button class="btn-red" onclick="exitAdmin()">退出管理</button>
       </div>
     </div>
+    
+    <!-- 图标清单回来了 -->
+    <div class="card">
+      <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; color: #334155;">图标链接清单 (一行一个绝对 URL)</div>
+      <textarea id="iconsListInput" style="width: 100%; min-height: 90px; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: monospace; font-size: 0.85rem; outline: none; resize: vertical;" placeholder="https://cdn.jsdelivr.net/gh/user/repo@main/icons/default.ico"></textarea>
+    </div>
+
     <div id="adminTreeList"></div>
     <div id="adminCodeList"></div>
   </div>
@@ -142,7 +129,7 @@
     let isAdmin = false, pwdCache = "", data = { tree: [], codes: [] }, currentSelectedId = null;
     const expandedIds = new Set();
 
-    // === 连点逻辑 ===
+    // === 连点 5 下 ===
     let clicks = 0, timer = null;
     document.getElementById('secretTrigger').onclick = function() {
       clicks++;
@@ -152,7 +139,7 @@
         clicks = 0;
         document.getElementById('codeInput').value = "";
         document.getElementById('codeModal').classList.add('show');
-        setTimeout(() => document.getElementById('codeInput').focus(), 100);
+        setTimeout(function() { document.getElementById('codeInput').focus(); }, 100);
       }
     };
 
@@ -168,7 +155,8 @@
         });
         let json = await res.json();
         if (json.ok) {
-          pwdCache = val; isAdmin = true;
+          pwdCache = val; 
+          isAdmin = true;
           document.getElementById('publicView').style.display = 'none';
           document.getElementById('adminView').classList.add('show');
           alert("管理员登录成功");
@@ -187,7 +175,7 @@
           let html = "";
           if (vJson.data.links && vJson.data.links.length > 0) {
             vJson.data.links.forEach(function(l) {
-              html += `<div class="link-row"><div class="link-info"><div class="link-name">${l.name}</div><div class="link-size">${l.size || ''}</div></div><button class="btn-copy" onclick="navigator.clipboard.writeText('${l.magnet}'); alert('已复制')">复制磁力链接</button></div>`;
+              html += '<div class="link-row"><div class="link-info"><div class="link-name">' + l.name + '</div><div class="link-size">' + (l.size || '') + '</div></div><button class="btn-copy" onclick="navigator.clipboard.writeText(\'' + l.magnet + '\'); alert(\'已复制\')">复制磁力链接</button></div>';
             });
           } else {
             html = '<div style="text-align:center; padding: 20px; color:#94a3b8;">暂无内容</div>';
@@ -221,7 +209,7 @@
         document.getElementById('treeContainer').innerHTML = '<div style="text-align:center;">暂无目录</div>';
         return;
       }
-      document.getElementById('treeContainer').innerHTML = data.tree.map(n => renderTreeNode(n)).join('');
+      document.getElementById('treeContainer').innerHTML = data.tree.map(function(n) { return renderTreeNode(n); }).join('');
       bindTreeEvents();
     }
 
@@ -229,16 +217,16 @@
       const hasChildren = node.children && node.children.length > 0;
       const isExpanded = expandedIds.has(node.id);
       const isActive = currentSelectedId === node.id;
-      const icon = node.icon ? `<img src="${node.icon}">` : "";
-      let html = `<div><div class="tree-node-row ${isActive?'active':''}" data-id="${node.id}" data-has-children="${hasChildren}"><span class="arrow ${isExpanded?'expanded':''}">${hasChildren?'▶':''}</span>${icon}<span>${node.name}</span></div>`;
+      const icon = node.icon ? '<img src="' + node.icon + '">' : "";
+      let html = '<div><div class="tree-node-row ' + (isActive?'active':'') + '" data-id="' + node.id + '" data-has-children="' + hasChildren + '"><span class="arrow ' + (isExpanded?'expanded':'') + '">' + (hasChildren?'▶':'') + '</span>' + icon + '<span>' + node.name + '</span></div>';
       if (hasChildren) {
-        html += `<div class="tree-children ${isExpanded?'':'hidden'}">` + node.children.map(c => renderTreeNode(c)).join('') + `</div>`;
+        html += '<div class="tree-children ' + (isExpanded?'':'hidden') + '">' + node.children.map(function(c) { return renderTreeNode(c); }).join('') + '</div>';
       }
-      return html + `</div>`;
+      return html + '</div>';
     }
 
     function bindTreeEvents() {
-      document.querySelectorAll('.tree-node-row').forEach(row => {
+      document.querySelectorAll('.tree-node-row').forEach(function(row) {
         row.onclick = function(e) {
           const id = this.dataset.id;
           const hasChildren = this.dataset.hasChildren === 'true';
@@ -272,13 +260,13 @@
 
     function renderNodeContent(node) {
       const links = node.links || [];
-      const icon = node.icon ? `<img src="${node.icon}">` : "";
-      let html = `<div class="content-header">${icon}<h2>${node.name}</h2></div>`;
+      const icon = node.icon ? '<img src="' + node.icon + '">' : "";
+      let html = '<div class="content-header">' + icon + '<h2>' + node.name + '</h2></div>';
       if (links.length === 0) {
         html += '<div style="text-align:center; padding: 40px; color:#94a3b8;">暂无文件</div>';
       } else {
-        links.forEach(l => {
-          html += `<div class="link-row"><div class="link-info"><div class="link-name">${l.name}</div><div class="link-size">${l.size || ''}</div></div><button class="btn-copy" onclick="navigator.clipboard.writeText('${l.magnet}'); alert('已复制')">复制磁力链接</button></div>`;
+        links.forEach(function(l) {
+          html += '<div class="link-row"><div class="link-info"><div class="link-name">' + l.name + '</div><div class="link-size">' + (l.size || '') + '</div></div><button class="btn-copy" onclick="navigator.clipboard.writeText(\'' + l.magnet + '\'); alert(\'已复制\')">复制磁力链接</button></div>';
         });
       }
       document.getElementById('contentPanel').innerHTML = html;
@@ -303,21 +291,15 @@
     }
 
     function renderAdmin() {
-      // 目录列表
-      document.getElementById('adminTreeList').innerHTML = `<div style="font-size:1.1rem;font-weight:600;color:#3b82f6;margin:20px 0 12px;">公开目录管理</div>` + 
-        data.tree.map((n, i) => `<div class="card"><div class="card-header"><label>名称:</label><input style="width:200px;" value="${n.name}" oninput="data.tree[${i}].name=this.value"><button class="btn-red" onclick="data.tree.splice(${i},1); renderAdmin();">删除</button></div></div>`).join('');
+      document.getElementById('adminTreeList').innerHTML = '<div style="font-size:1.1rem;font-weight:600;color:#3b82f6;margin:20px 0 12px;">公开目录管理</div>' + 
+        data.tree.map(function(n, i) {
+          return '<div class="card"><div class="card-header"><label>名称:</label><input style="width:200px;" value="' + n.name + '" oninput="data.tree[' + i + '].name=this.value"><button class="btn-red" onclick="data.tree.splice(' + i + ',1); renderAdmin();">删除</button></div></div>';
+        }).join('');
       
-      // 提取码列表
-      document.getElementById('adminCodeList').innerHTML = `<div style="font-size:1.1rem;font-weight:600;color:#ef4444;margin:20px 0 12px;">提取码管理</div>` + 
-        data.codes.map((c, i) => `
-          <div class="card">
-            <div class="card-header">
-              <label>提取码:</label><input style="width:100px;font-weight:bold;color:#ef4444;" value="${c.code}" oninput="data.codes[${i}].code=this.value">
-              <label>标题:</label><input style="width:200px;" value="${c.title || ''}" oninput="data.codes[${i}].title=this.value">
-              <button class="btn-red" style="margin-left:auto;" onclick="data.codes.splice(${i},1); renderAdmin();">删除</button>
-            </div>
-          </div>
-        `).join('');
+      document.getElementById('adminCodeList').innerHTML = '<div style="font-size:1.1rem;font-weight:600;color:#ef4444;margin:20px 0 12px;">提取码管理</div>' + 
+        data.codes.map(function(c, i) {
+          return '<div class="card"><div class="card-header"><label>提取码:</label><input style="width:100px;font-weight:bold;color:#ef4444;" value="' + c.code + '" oninput="data.codes[' + i + '].code=this.value"><label>标题:</label><input style="width:200px;" value="' + (c.title || '') + '" oninput="data.codes[' + i + '].title=this.value"><button class="btn-red" style="margin-left:auto;" onclick="data.codes.splice(' + i + ',1); renderAdmin();">删除</button></div></div>';
+        }).join('');
     }
 
     function addRootNode() {
@@ -330,7 +312,7 @@
     }
     async function saveData() {
       try {
-        const iconList = document.getElementById('iconsListInput').value.split('\n').map( => .trim()).filter( => .length > 0);
+        const iconList = document.getElementById('iconsListInput').value.split('\n').map(function() { return .trim(); }).filter(function() { return .length > 0; });
         let res = await fetch(API_BASE + '/api/admin/save', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwdCache, data: data, icons: iconList })
         });
