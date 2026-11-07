@@ -28,18 +28,28 @@
     .link-info { flex: 1; min-width: 200px; }
     .link-name { font-weight: 600; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
     .link-size { font-size: 0.85rem; color: #64748b; }
+    .link-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    
+    /* 按钮 */
     button { cursor: pointer; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.85rem; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
     button:active { transform: scale(0.96); }
     .btn-copy { background: #eff6ff; color: #2563eb; }
     .btn-copy:hover { background: #dbeafe; }
     .btn-blue { background: #3b82f6; color: #fff; }
     .btn-blue:hover { background: #2563eb; }
+    .btn-download { background: #10b981; color: #fff; }
+    .btn-download:hover { background: #059669; }
     .btn-gray { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
     .btn-gray:hover { background: #e2e8f0; }
     .btn-red { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
     .btn-red:hover { background: #fecaca; }
+    .btn-icon { background: #fee2e2; color: #dc2626; padding: 6px 10px; font-size: 1.1rem; line-height: 1; }
+    
+    /* 结果卡片 */
     .result-area { display: none; width: 100%; max-width: 1000px; margin-top: 24px; }
     .result-area.show { display: block; }
+    
+    /* 后台管理 */
     .admin-view { display: none; width: 100%; max-width: 1000px; margin-top: 24px; }
     .admin-view.show { display: block; }
     .toolbar { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
@@ -47,6 +57,13 @@
     .card-header { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed #e2e8f0; flex-wrap: wrap; }
     .card-header input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; }
     .card-header input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    
+    /* 链接编辑行 */
+    .link-edit-row { display: grid; grid-template-columns: 1fr 80px 1.5fr 1.5fr 40px; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .link-edit-row input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; }
+    .link-edit-row input:focus { border-color: #3b82f6; }
+    
+    /* 弹窗 */
     .modal-mask { position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-mask.show { display: flex; }
     .modal { background: #fff; border-radius: 16px; padding: 28px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
@@ -136,6 +153,25 @@
       }
     };
 
+    // ======== 渲染链接的通用逻辑 ========
+    // 核心磁力链接永远存在，HTTP 是附加项
+    function buildLinkHtml(l) {
+      var html = '<div class="link-row"><div class="link-info"><div class="link-name">' + l.name + '</div><div class="link-size">' + (l.size || '') + '</div></div><div class="link-actions">';
+      
+      // 1. 磁力链接按钮 (必有)
+      html += '<button class="btn-copy" onclick="navigator.clipboard.writeText(\'' + l.magnet + '\'); alert(\'已复制磁力链接\')">复制磁力链接</button>';
+      html += '<button class="btn-blue" onclick="window.location.href=\'' + l.magnet + '\'">使用 BT 下载</button>';
+
+      // 2. 如果填了 HTTP/HTTPS 直链，追加两个按钮
+      if (l.http_url && (l.http_url.indexOf('http://') === 0 || l.http_url.indexOf('https://') === 0)) {
+        html += '<button class="btn-copy" style="background:#ecfdf5;color:#059669;" onclick="navigator.clipboard.writeText(\'' + l.http_url + '\'); alert(\'已复制 HTTP 直链\')">复制直链</button>';
+        html += '<button class="btn-download" onclick="window.open(\'' + l.http_url + '\', \'_blank\')">下载</button>';
+      }
+      
+      html += '</div></div>';
+      return html;
+    }
+
     // 验证与提取
     async function handleConfirm() {
       var val = document.getElementById('codeInput').value.trim();
@@ -167,9 +203,9 @@
           document.getElementById('resultTitle').innerText = vJson.data.title || "提取结果";
           var html = "";
           if (vJson.data.links && vJson.data.links.length > 0) {
-            vJson.data.links.forEach(function(l) {
-              html += '<div class="link-row"><div class="link-info"><div class="link-name">' + l.name + '</div><div class="link-size">' + (l.size || '') + '</div></div><button class="btn-copy" onclick="navigator.clipboard.writeText(\'' + l.magnet + '\'); alert(\'已复制\')">复制磁力链接</button></div>';
-            });
+            for (var i = 0; i < vJson.data.links.length; i++) {
+              html += buildLinkHtml(vJson.data.links[i]);
+            }
           } else {
             html = '<div style="text-align:center; padding: 20px; color:#94a3b8;">暂无内容</div>';
           }
@@ -269,15 +305,14 @@
         html += '<div style="text-align:center; padding: 40px; color:#94a3b8;">暂无文件</div>';
       } else {
         for (var i = 0; i < links.length; i++) {
-          var l = links[i];
-          html += '<div class="link-row"><div class="link-info"><div class="link-name">' + l.name + '</div><div class="link-size">' + (l.size || '') + '</div></div><button class="btn-copy" onclick="navigator.clipboard.writeText(\'' + l.magnet + '\'); alert(\'已复制\')">复制磁力链接</button></div>';
+          html += buildLinkHtml(links[i]);
         }
       }
       document.getElementById('contentPanel').innerHTML = html;
       document.getElementById('contentPanel').style.display = 'block';
     }
 
-    // 后台管理
+    // ===== 后台管理 =====
     async function loadAdminData() {
       try {
         var res = await fetch(API_BASE + '/api/admin/get', {
@@ -295,17 +330,37 @@
     }
 
     function renderAdmin() {
+      // 1. 渲染公开目录
       var treeHtml = '<div style="font-size:1.1rem;font-weight:600;color:#3b82f6;margin:20px 0 12px;">公开目录管理</div>';
       for (var i = 0; i < data.tree.length; i++) {
         var n = data.tree[i];
-        treeHtml += '<div class="card"><div class="card-header"><label>名称:</label><input style="width:200px;" value="' + n.name + '" oninput="data.tree[' + i + '].name=this.value"><button class="btn-red" onclick="data.tree.splice(' + i + ',1); renderAdmin();">删除</button></div></div>';
+        treeHtml += '<div class="card"><div class="card-header"><label>名称:</label><input style="width:200px;" value="' + n.name + '" oninput="data.tree[' + i + '].name=this.value"><button class="btn-red" onclick="data.tree.splice(' + i + ',1); renderAdmin();">删除</button></div>';
+        
+        // 渲染该目录下的文件
+        if (!n.links) n.links = [];
+        treeHtml += '<div style="margin-top:10px;">';
+        for (var j = 0; j < n.links.length; j++) {
+          var l = n.links[j];
+          treeHtml += '<div class="link-edit-row"><input type="text" value="' + (l.name || '') + '" placeholder="文件名" oninput="data.tree[' + i + '].links[' + j + '].name=this.value"><input type="text" value="' + (l.size || '') + '" placeholder="大小" oninput="data.tree[' + i + '].links[' + j + '].size=this.value"><input type="text" value="' + (l.magnet || '') + '" placeholder="磁力链接" oninput="data.tree[' + i + '].links[' + j + '].magnet=this.value"><input type="text" value="' + (l.http_url || '') + '" placeholder="HTTP直链(选填)" oninput="data.tree[' + i + '].links[' + j + '].http_url=this.value"><button class="btn-icon" onclick="data.tree[' + i + '].links.splice(' + j + ',1); renderAdmin();">×</button></div>';
+        }
+        treeHtml += '</div><button class="btn-gray" style="margin-top:8px;" onclick="data.tree[' + i + '].links.push({name:\'\',size:\'\',magnet:\'\',http_url:\'\'}); renderAdmin();">+ 添加链接</button></div>';
       }
       document.getElementById('adminTreeList').innerHTML = treeHtml;
 
+      // 2. 渲染提取码
       var codeHtml = '<div style="font-size:1.1rem;font-weight:600;color:#ef4444;margin:20px 0 12px;">提取码管理</div>';
-      for (var j = 0; j < data.codes.length; j++) {
-        var c = data.codes[j];
-        codeHtml += '<div class="card"><div class="card-header"><label>提取码:</label><input style="width:100px;font-weight:bold;color:#ef4444;" value="' + c.code + '" oninput="data.codes[' + j + '].code=this.value"><label>标题:</label><input style="width:200px;" value="' + (c.title || '') + '" oninput="data.codes[' + j + '].title=this.value"><button class="btn-red" style="margin-left:auto;" onclick="data.codes.splice(' + j + ',1); renderAdmin();">删除</button></div></div>';
+      for (var k = 0; k < data.codes.length; k++) {
+        var c = data.codes[k];
+        codeHtml += '<div class="card"><div class="card-header"><label>提取码:</label><input style="width:100px;font-weight:bold;color:#ef4444;" value="' + c.code + '" oninput="data.codes[' + k + '].code=this.value"><label>标题:</label><input style="width:200px;" value="' + (c.title || '') + '" oninput="data.codes[' + k + '].title=this.value"><button class="btn-red" style="margin-left:auto;" onclick="data.codes.splice(' + k + ',1); renderAdmin();">删除</button></div>';
+        
+        // 渲染该提取码下的文件
+        if (!c.links) c.links = [];
+        codeHtml += '<div style="margin-top:10px;">';
+        for (var m = 0; m < c.links.length; m++) {
+          var cl = c.links[m];
+          codeHtml += '<div class="link-edit-row"><input type="text" value="' + (cl.name || '') + '" placeholder="文件名" oninput="data.codes[' + k + '].links[' + m + '].name=this.value"><input type="text" value="' + (cl.size || '') + '" placeholder="大小" oninput="data.codes[' + k + '].links[' + m + '].size=this.value"><input type="text" value="' + (cl.magnet || '') + '" placeholder="磁力链接" oninput="data.codes[' + k + '].links[' + m + '].magnet=this.value"><input type="text" value="' + (cl.http_url || '') + '" placeholder="HTTP直链(选填)" oninput="data.codes[' + k + '].links[' + m + '].http_url=this.value"><button class="btn-icon" onclick="data.codes[' + k + '].links.splice(' + m + ',1); renderAdmin();">×</button></div>';
+        }
+        codeHtml += '</div><button class="btn-gray" style="margin-top:8px;" onclick="data.codes[' + k + '].links.push({name:\'\',size:\'\',magnet:\'\',http_url:\'\'}); renderAdmin();">+ 添加链接</button></div>';
       }
       document.getElementById('adminCodeList').innerHTML = codeHtml;
     }
