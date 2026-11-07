@@ -25,7 +25,8 @@
     .content-header img { width: 32px; height: 32px; object-fit: contain; }
     .content-header h2 { font-size: 1.3rem; color: #0f172a; }
     .link-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-radius: 12px; background: #f8fafc; margin-bottom: 10px; border: 1px solid #e2e8f0; gap: 12px; flex-wrap: wrap; }
-    .link-info { flex: 1; min-width: 200px; }
+    .link-info { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 12px; }
+    .link-info img { width: 24px; height: 24px; object-fit: contain; }
     .link-name { font-weight: 600; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
     .link-size { font-size: 0.85rem; color: #64748b; }
     .link-actions { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -45,11 +46,9 @@
     .btn-red:hover { background: #fecaca; }
     .btn-icon { background: #fee2e2; color: #dc2626; padding: 6px 10px; font-size: 1.1rem; line-height: 1; }
     
-    /* 结果卡片 */
     .result-area { display: none; width: 100%; max-width: 1000px; margin-top: 24px; }
     .result-area.show { display: block; }
     
-    /* 后台管理 */
     .admin-view { display: none; width: 100%; max-width: 1000px; margin-top: 24px; }
     .admin-view.show { display: block; }
     .toolbar { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
@@ -58,12 +57,11 @@
     .card-header input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; }
     .card-header input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
     
-    /* 链接编辑行 */
-    .link-edit-row { display: grid; grid-template-columns: 1fr 80px 1.5fr 1.5fr 40px; gap: 8px; margin-bottom: 8px; align-items: center; }
+    /* 文件链接编辑行 */
+    .link-edit-row { display: grid; grid-template-columns: 1fr 70px 1.5fr 1.5fr 1.2fr 40px; gap: 6px; margin-bottom: 8px; align-items: center; }
     .link-edit-row input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; }
     .link-edit-row input:focus { border-color: #3b82f6; }
     
-    /* 弹窗 */
     .modal-mask { position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-mask.show { display: flex; }
     .modal { background: #fff; border-radius: 16px; padding: 28px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
@@ -82,7 +80,7 @@
 
   <div class="result-area" id="resultArea">
     <div class="panel" style="max-height:none;">
-      <h2 id="resultTitle" style="margin-bottom: 20px; font-size: 1.3rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;"></h2>
+      <h2 id="resultTitle" style="margin-bottom: 20px; font-size: 1.3rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; display: flex; align-items: center; gap: 12px;"></h2>
       <div id="resultLinks"></div>
     </div>
   </div>
@@ -110,11 +108,6 @@
       </div>
     </div>
     
-    <div class="card">
-      <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; color: #334155;">图标链接清单 (一行一个绝对 URL)</div>
-      <textarea id="iconsListInput" style="width: 100%; min-height: 90px; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: monospace; font-size: 0.85rem; outline: none; resize: vertical;" placeholder="https://cdn.jsdelivr.net/gh/user/repo@main/icons/default.ico"></textarea>
-    </div>
-
     <div id="adminTreeList"></div>
     <div id="adminCodeList"></div>
   </div>
@@ -153,16 +146,19 @@
       }
     };
 
-    // ======== 渲染链接的通用逻辑 ========
-    // 核心磁力链接永远存在，HTTP 是附加项
+    // ======== 渲染文件链接 ========
     function buildLinkHtml(l) {
-      var html = '<div class="link-row"><div class="link-info"><div class="link-name">' + l.name + '</div><div class="link-size">' + (l.size || '') + '</div></div><div class="link-actions">';
+      var html = '<div class="link-row"><div class="link-info">';
+      if (l.icon) {
+        html += '<img src="' + l.icon + '">';
+      }
+      html += '<div><div class="link-name">' + l.name + '</div><div class="link-size">' + (l.size || '') + '</div></div></div><div class="link-actions">';
       
-      // 1. 磁力链接按钮 (必有)
+      // 磁力按钮
       html += '<button class="btn-copy" onclick="navigator.clipboard.writeText(\'' + l.magnet + '\'); alert(\'已复制磁力链接\')">复制磁力链接</button>';
       html += '<button class="btn-blue" onclick="window.location.href=\'' + l.magnet + '\'">使用 BT 下载</button>';
 
-      // 2. 如果填了 HTTP/HTTPS 直链，追加两个按钮
+      // 直链按钮
       if (l.http_url && (l.http_url.indexOf('http://') === 0 || l.http_url.indexOf('https://') === 0)) {
         html += '<button class="btn-copy" style="background:#ecfdf5;color:#059669;" onclick="navigator.clipboard.writeText(\'' + l.http_url + '\'); alert(\'已复制 HTTP 直链\')">复制直链</button>';
         html += '<button class="btn-download" onclick="window.open(\'' + l.http_url + '\', \'_blank\')">下载</button>';
@@ -200,7 +196,9 @@
 
         if (vJson.ok) {
           document.getElementById('resultArea').classList.add('show');
-          document.getElementById('resultTitle').innerText = vJson.data.title || "提取结果";
+          var iconHtml = vJson.data.icon ? '<img src="' + vJson.data.icon + '" style="width:32px;height:32px;object-fit:contain;">' : '';
+          document.getElementById('resultTitle').innerHTML = iconHtml + (vJson.data.title || "提取结果");
+          
           var html = "";
           if (vJson.data.links && vJson.data.links.length > 0) {
             for (var i = 0; i < vJson.data.links.length; i++) {
@@ -321,9 +319,6 @@
         var json = await res.json();
         if (json.ok) { 
           data = json.data; 
-          if (data.icons && data.icons.length > 0) {
-            document.getElementById('iconsListInput').value = data.icons.join('\n');
-          }
           renderAdmin(); 
         }
       } catch (e) { alert("加载失败"); }
@@ -334,16 +329,25 @@
       var treeHtml = '<div style="font-size:1.1rem;font-weight:600;color:#3b82f6;margin:20px 0 12px;">公开目录管理</div>';
       for (var i = 0; i < data.tree.length; i++) {
         var n = data.tree[i];
-        treeHtml += '<div class="card"><div class="card-header"><label>名称:</label><input style="width:200px;" value="' + n.name + '" oninput="data.tree[' + i + '].name=this.value"><button class="btn-red" onclick="data.tree.splice(' + i + ',1); renderAdmin();">删除</button></div>';
         
-        // 渲染该目录下的文件
+        treeHtml += '<div class="card"><div class="card-header">' +
+          '<label>名称:</label><input style="width:150px;" value="' + n.name + '" oninput="data.tree[' + i + '].name=this.value">' +
+          '<label>图标:</label><input style="width:200px;" value="' + (n.icon || '') + '" placeholder="https://.../icon.png" oninput="data.tree[' + i + '].icon=this.value">' +
+          '<button class="btn-red" onclick="data.tree.splice(' + i + ',1); renderAdmin();">删除</button></div>';
+        
         if (!n.links) n.links = [];
         treeHtml += '<div style="margin-top:10px;">';
         for (var j = 0; j < n.links.length; j++) {
           var l = n.links[j];
-          treeHtml += '<div class="link-edit-row"><input type="text" value="' + (l.name || '') + '" placeholder="文件名" oninput="data.tree[' + i + '].links[' + j + '].name=this.value"><input type="text" value="' + (l.size || '') + '" placeholder="大小" oninput="data.tree[' + i + '].links[' + j + '].size=this.value"><input type="text" value="' + (l.magnet || '') + '" placeholder="磁力链接" oninput="data.tree[' + i + '].links[' + j + '].magnet=this.value"><input type="text" value="' + (l.http_url || '') + '" placeholder="HTTP直链(选填)" oninput="data.tree[' + i + '].links[' + j + '].http_url=this.value"><button class="btn-icon" onclick="data.tree[' + i + '].links.splice(' + j + ',1); renderAdmin();">×</button></div>';
+          treeHtml += '<div class="link-edit-row">' +
+            '<input type="text" value="' + (l.name || '') + '" placeholder="文件名" oninput="data.tree[' + i + '].links[' + j + '].name=this.value">' +
+            '<input type="text" value="' + (l.size || '') + '" placeholder="大小" oninput="data.tree[' + i + '].links[' + j + '].size=this.value">' +
+            '<input type="text" value="' + (l.magnet || '') + '" placeholder="磁力链接" oninput="data.tree[' + i + '].links[' + j + '].magnet=this.value">' +
+            '<input type="text" value="' + (l.http_url || '') + '" placeholder="HTTP直链(选填)" oninput="data.tree[' + i + '].links[' + j + '].http_url=this.value">' +
+            '<input type="text" value="' + (l.icon || '') + '" placeholder="文件图标(选填)" oninput="data.tree[' + i + '].links[' + j + '].icon=this.value">' +
+            '<button class="btn-icon" onclick="data.tree[' + i + '].links.splice(' + j + ',1); renderAdmin();">×</button></div>';
         }
-        treeHtml += '</div><button class="btn-gray" style="margin-top:8px;" onclick="data.tree[' + i + '].links.push({name:\'\',size:\'\',magnet:\'\',http_url:\'\'}); renderAdmin();">+ 添加链接</button></div>';
+        treeHtml += '</div><button class="btn-gray" style="margin-top:8px;" onclick="data.tree[' + i + '].links.push({name:\'\',size:\'\',magnet:\'\',http_url:\'\',icon:\'\'}); renderAdmin();">+ 添加文件</button></div>';
       }
       document.getElementById('adminTreeList').innerHTML = treeHtml;
 
@@ -351,16 +355,25 @@
       var codeHtml = '<div style="font-size:1.1rem;font-weight:600;color:#ef4444;margin:20px 0 12px;">提取码管理</div>';
       for (var k = 0; k < data.codes.length; k++) {
         var c = data.codes[k];
-        codeHtml += '<div class="card"><div class="card-header"><label>提取码:</label><input style="width:100px;font-weight:bold;color:#ef4444;" value="' + c.code + '" oninput="data.codes[' + k + '].code=this.value"><label>标题:</label><input style="width:200px;" value="' + (c.title || '') + '" oninput="data.codes[' + k + '].title=this.value"><button class="btn-red" style="margin-left:auto;" onclick="data.codes.splice(' + k + ',1); renderAdmin();">删除</button></div>';
+        codeHtml += '<div class="card"><div class="card-header">' +
+          '<label>提取码:</label><input style="width:100px;font-weight:bold;color:#ef4444;" value="' + c.code + '" oninput="data.codes[' + k + '].code=this.value">' +
+          '<label>标题:</label><input style="width:150px;" value="' + (c.title || '') + '" oninput="data.codes[' + k + '].title=this.value">' +
+          '<label>图标:</label><input style="width:200px;" value="' + (c.icon || '') + '" placeholder="https://.../icon.png" oninput="data.codes[' + k + '].icon=this.value">' +
+          '<button class="btn-red" style="margin-left:auto;" onclick="data.codes.splice(' + k + ',1); renderAdmin();">删除</button></div>';
         
-        // 渲染该提取码下的文件
         if (!c.links) c.links = [];
         codeHtml += '<div style="margin-top:10px;">';
         for (var m = 0; m < c.links.length; m++) {
           var cl = c.links[m];
-          codeHtml += '<div class="link-edit-row"><input type="text" value="' + (cl.name || '') + '" placeholder="文件名" oninput="data.codes[' + k + '].links[' + m + '].name=this.value"><input type="text" value="' + (cl.size || '') + '" placeholder="大小" oninput="data.codes[' + k + '].links[' + m + '].size=this.value"><input type="text" value="' + (cl.magnet || '') + '" placeholder="磁力链接" oninput="data.codes[' + k + '].links[' + m + '].magnet=this.value"><input type="text" value="' + (cl.http_url || '') + '" placeholder="HTTP直链(选填)" oninput="data.codes[' + k + '].links[' + m + '].http_url=this.value"><button class="btn-icon" onclick="data.codes[' + k + '].links.splice(' + m + ',1); renderAdmin();">×</button></div>';
+          codeHtml += '<div class="link-edit-row">' +
+            '<input type="text" value="' + (cl.name || '') + '" placeholder="文件名" oninput="data.codes[' + k + '].links[' + m + '].name=this.value">' +
+            '<input type="text" value="' + (cl.size || '') + '" placeholder="大小" oninput="data.codes[' + k + '].links[' + m + '].size=this.value">' +
+            '<input type="text" value="' + (cl.magnet || '') + '" placeholder="磁力链接" oninput="data.codes[' + k + '].links[' + m + '].magnet=this.value">' +
+            '<input type="text" value="' + (cl.http_url || '') + '" placeholder="HTTP直链(选填)" oninput="data.codes[' + k + '].links[' + m + '].http_url=this.value">' +
+            '<input type="text" value="' + (cl.icon || '') + '" placeholder="文件图标(选填)" oninput="data.codes[' + k + '].links[' + m + '].icon=this.value">' +
+            '<button class="btn-icon" onclick="data.codes[' + k + '].links.splice(' + m + ',1); renderAdmin();">×</button></div>';
         }
-        codeHtml += '</div><button class="btn-gray" style="margin-top:8px;" onclick="data.codes[' + k + '].links.push({name:\'\',size:\'\',magnet:\'\',http_url:\'\'}); renderAdmin();">+ 添加链接</button></div>';
+        codeHtml += '</div><button class="btn-gray" style="margin-top:8px;" onclick="data.codes[' + k + '].links.push({name:\'\',size:\'\',magnet:\'\',http_url:\'\',icon:\'\'}); renderAdmin();">+ 添加文件</button></div>';
       }
       document.getElementById('adminCodeList').innerHTML = codeHtml;
     }
@@ -377,15 +390,8 @@
 
     async function saveData() {
       try {
-        var text = document.getElementById('iconsListInput').value;
-        var lines = text.split('\n');
-        var iconList = [];
-        for (var i = 0; i < lines.length; i++) {
-          if (lines[i].trim()) iconList.push(lines[i].trim());
-        }
-        
         var res = await fetch(API_BASE + '/api/admin/save', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwdCache, data: data, icons: iconList })
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwdCache, data: data })
         });
         var json = await res.json();
         if (json.ok) { alert("保存成功！"); loadTree(); } else { alert("保存失败"); }
